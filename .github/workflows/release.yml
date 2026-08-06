@@ -21,6 +21,10 @@ jobs:
   release:
     name: Build and publish
     runs-on: macos-15
+    env:
+      # Job-level so the `if:` on the signing step can test it. Secrets are not
+      # readable from a step-level `if:` expression.
+      CERT_P12: ${{ secrets.DEVELOPER_ID_CERT_P12 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,21 +60,114 @@ jobs:
           key: spm-${{ runner.os }}-${{ github.repository }}-${{ hashFiles('Package.resolved') }}
           restore-keys: spm-${{ runner.os }}-${{ github.repository }}-
 
+      # Notarization is opt-in. Without an Apple Developer account the secrets
+      # are absent, the build stays ad-hoc signed, and everything behaves as it
+      # did before. With them, Gatekeeper stops warning users and the `xattr`
+      # workaround goes away.
+      - name: Import signing certificate
+        id: signing
+        if: steps.version.outputs.release == 'true' && env.CERT_P12 != ''
+        env:
+          CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/build.keychain-db"
+          password="$(uuidgen)"
+
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 900 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
+            -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          # Without this, codesign blocks on a keychain prompt no one can answer.
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" >/dev/null
+          security list-keychain -d user -s "$keychain" login.keychain-db
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+          identity="$(security find-identity -v -p codesigning "$keychain" \
+            | sed -n 's/.*"\(Developer ID Application.*\)"/\1/p' | head -1)"
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+          echo "Signing as: $identity"
+
       - name: Build DMG
         if: steps.version.outputs.release == 'true'
-        run: Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}"
+        env:
+          IDENTITY: ${{ steps.signing.outputs.identity }}
+        run: |
+          if [ -n "${IDENTITY}" ]; then
+            Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}" --sign "${IDENTITY}"
+          else
+            echo "::warning::No Developer ID secret configured — shipping an ad-hoc signed build. Users will have to clear the quarantine flag by hand."
+            Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}"
+          fi
+
+      - name: Notarize and staple
+        if: steps.version.outputs.release == 'true' && steps.signing.outputs.identity != ''
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          dmg="dist/Beagle-${VERSION}-arm64.dmg"
+
+          # --wait blocks on Apple's verdict, so a rejected build fails the
+          # release instead of publishing something Gatekeeper will refuse.
+          xcrun notarytool submit "$dmg" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_PASSWORD" \
+            --wait
+
+          # Stapling attaches the ticket to the DMG so the first launch works
+          # even with no network.
+          xcrun stapler staple "$dmg"
+          xcrun stapler validate "$dmg"
 
       - name: Publish release
         if: steps.version.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.next }}
+          NOTARIZED: ${{ steps.signing.outputs.identity }}
         run: |
+          # Un-notarized builds get install instructions ahead of the generated
+          # changelog, because Gatekeeper's refusal is the first thing a user
+          # hits and "could not verify Beagle is free of malware" reads as a
+          # virus warning rather than a missing signature.
+          notes_args=(--generate-notes)
+          if [ -z "${NOTARIZED}" ]; then
+            notes="$(mktemp)"
+            cat > "$notes" <<'NOTE'
+          ## Install
+
+          1. Open the DMG and drag **Beagle** to Applications.
+          2. This build is signed ad-hoc rather than notarized, so macOS will say
+             it *"could not verify Beagle is free of malware"*. That is the
+             missing notarization, not a finding. Clear the quarantine flag:
+
+             ```
+             xattr -dr com.apple.quarantine /Applications/Beagle.app
+             ```
+
+             Or: System Settings → Privacy & Security → **Open Anyway**.
+          3. Beagle lives in the menu bar. There is no Dock icon.
+
+          If you granted Accessibility to an earlier version and pasting stops
+          working, remove the old entry and add this one — macOS ties that grant
+          to the app's signature, which changes with every release.
+
+          ---
+          NOTE
+            notes_args+=(--notes-file "$notes")
+          fi
+
           # `gh release create` creates the tag itself at --target, so nothing
-          # needs pushing to the protected main branch. --generate-notes works
-          # out the previous tag on its own, including when there isn't one.
+          # needs pushing to the protected main branch.
           gh release create "v${VERSION}" \
             "dist/Beagle-${VERSION}-arm64.dmg" \
             --title "Beagle ${VERSION}" \
-            --generate-notes \
+            "${notes_args[@]}" \
             --target "${GITHUB_SHA}"
