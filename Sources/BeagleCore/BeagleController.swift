@@ -80,7 +80,13 @@ public final class BeagleController {
         didSet {
             guard settings != oldValue else { return }
             settingsStore.current = settings
-            if settings.dictationMode != oldValue.dictationMode { rebindHotKeys() }
+            if settings.dictationMode != oldValue.dictationMode
+                || settings.dictationShortcut != oldValue.dictationShortcut
+                || settings.speakSelectionShortcut != oldValue.speakSelectionShortcut
+                || settings.readScreenShortcut != oldValue.readScreenShortcut
+            {
+                rebindHotKeys()
+            }
             if settings.appearance != oldValue.appearance { applyAppearance() }
         }
     }
@@ -386,7 +392,7 @@ public final class BeagleController {
         }
 
         if let token = center.register(
-            .speakSelection,
+            settings.speakSelectionShortcut,
             handler: { [weak self] edge in
                 guard let self, edge == .pressed else { return }
                 // Pressing it again while speaking stops, which is what every user
@@ -402,7 +408,7 @@ public final class BeagleController {
         }
 
         if let token = center.register(
-            .readScreen,
+            settings.readScreenShortcut,
             handler: { [weak self] edge in
                 guard let self, edge == .pressed else { return }
                 Task { await self.readScreenRegion() }

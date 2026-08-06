@@ -75,6 +75,12 @@ public struct Settings: Equatable, Sendable {
     public var orbStyle: OrbStyle
     public var appearance: Appearance
 
+    /// Global shortcuts. Customizable, because any default will collide with
+    /// something on someone's machine.
+    public var dictationShortcut: KeyCombo
+    public var speakSelectionShortcut: KeyCombo
+    public var readScreenShortcut: KeyCombo
+
     /// Play a short tick when recording starts and stops.
     public var playFeedbackSounds: Bool
 
@@ -93,6 +99,9 @@ public struct Settings: Equatable, Sendable {
         transcriptDelivery: .paste,
         orbStyle: .beagle,
         appearance: .system,
+        dictationShortcut: .dictation,
+        speakSelectionShortcut: .speakSelection,
+        readScreenShortcut: .readScreen,
         playFeedbackSounds: true,
         showsOrb: true,
         speechRate: 1.0,
@@ -111,6 +120,9 @@ public final class SettingsStore: @unchecked Sendable {
         static let transcriptDelivery = "transcriptDelivery"
         static let orbStyle = "orbStyle"
         static let appearance = "appearance"
+        static let dictationShortcut = "dictationShortcut"
+        static let speakSelectionShortcut = "speakSelectionShortcut"
+        static let readScreenShortcut = "readScreenShortcut"
         static let playFeedbackSounds = "playFeedbackSounds"
         static let showsOrb = "showsOrb"
         static let speechRate = "speechRate"
@@ -153,6 +165,11 @@ public final class SettingsStore: @unchecked Sendable {
                     .flatMap(Settings.OrbStyle.init(rawValue:)) ?? .beagle,
                 appearance: defaults.string(forKey: Key.appearance)
                     .flatMap(Settings.Appearance.init(rawValue:)) ?? .system,
+                dictationShortcut: Self.combo(defaults, Key.dictationShortcut, fallback: .dictation),
+                speakSelectionShortcut: Self.combo(
+                    defaults, Key.speakSelectionShortcut, fallback: .speakSelection),
+                readScreenShortcut: Self.combo(
+                    defaults, Key.readScreenShortcut, fallback: .readScreen),
                 playFeedbackSounds: defaults.bool(forKey: Key.playFeedbackSounds),
                 showsOrb: defaults.bool(forKey: Key.showsOrb),
                 speechRate: Self.clampRate(defaults.float(forKey: Key.speechRate)),
@@ -164,11 +181,36 @@ public final class SettingsStore: @unchecked Sendable {
             defaults.set(newValue.transcriptDelivery.rawValue, forKey: Key.transcriptDelivery)
             defaults.set(newValue.orbStyle.rawValue, forKey: Key.orbStyle)
             defaults.set(newValue.appearance.rawValue, forKey: Key.appearance)
+            Self.store(newValue.dictationShortcut, in: defaults, at: Key.dictationShortcut)
+            Self.store(newValue.speakSelectionShortcut, in: defaults, at: Key.speakSelectionShortcut)
+            Self.store(newValue.readScreenShortcut, in: defaults, at: Key.readScreenShortcut)
             defaults.set(newValue.playFeedbackSounds, forKey: Key.playFeedbackSounds)
             defaults.set(newValue.showsOrb, forKey: Key.showsOrb)
             defaults.set(Self.clampRate(newValue.speechRate), forKey: Key.speechRate)
             defaults.set(newValue.preloadModels, forKey: Key.preloadModels)
         }
+    }
+
+    /// Decode a stored shortcut, falling back when absent or corrupt.
+    ///
+    /// A malformed entry must not strand the user without a working shortcut,
+    /// so a decode failure quietly restores the default rather than throwing.
+    private static func combo(
+        _ defaults: UserDefaults,
+        _ key: String,
+        fallback: KeyCombo
+    ) -> KeyCombo {
+        guard
+            let data = defaults.data(forKey: key),
+            let combo = try? JSONDecoder().decode(KeyCombo.self, from: data),
+            combo.isValid
+        else { return fallback }
+        return combo
+    }
+
+    private static func store(_ combo: KeyCombo, in defaults: UserDefaults, at key: String) {
+        guard let data = try? JSONEncoder().encode(combo) else { return }
+        defaults.set(data, forKey: key)
     }
 
     /// Clamp into ``speechRateRange``, mapping a missing key (0) to normal speed.
