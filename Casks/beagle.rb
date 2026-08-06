@@ -9,7 +9,7 @@ cask "beagle" do
   homepage "https://loom-labs.github.io/beagle/"
 
   depends_on arch: :arm64
-  depends_on macos: ">= :sonoma"
+  depends_on macos: :sonoma
 
   app "Beagle.app"
 
@@ -27,8 +27,13 @@ cask "beagle" do
 
     On first use it downloads ~1 GB of models, then runs entirely offline.
 
-    Grant Accessibility when asked, then relaunch Beagle. macOS only hands the
-    permission to a freshly launched process, so dictation pastes to the
+    The first launch is blocked by Gatekeeper, because this build is signed but
+    not notarized. Open System Settings > Privacy & Security and click
+    "Open Anyway". Homebrew carries that approval forward to later upgrades, so
+    it is a one-time step.
+
+    Then grant Accessibility and relaunch Beagle. macOS only hands the
+    permission to a freshly launched process, so dictation copies to the
     clipboard until you do.
   EOS
 end

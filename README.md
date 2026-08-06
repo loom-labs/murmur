@@ -74,12 +74,15 @@ FluidAudio-based app you already run.
 
 ```bash
 brew tap loom-labs/beagle https://github.com/loom-labs/beagle
-brew install --cask --no-quarantine beagle
+brew install --cask beagle
 ```
 
-`--no-quarantine` matters. Homebrew quarantines casks by default, so without it
-you still get "Apple could not verify Beagle is free of malware" — the same
-warning as a manual download. With it, Beagle opens straight away.
+Homebrew 6.0 removed `--no-quarantine`, so the first launch is blocked either
+way: open System Settings → Privacy & Security and click **Open Anyway**.
+
+That is a one-time step rather than a per-upgrade one. Homebrew carries the
+approval forward on upgrade, but only when the app's signing identity has not
+changed — see below.
 
 ### Direct download
 
@@ -91,6 +94,16 @@ xattr -dr com.apple.quarantine /Applications/Beagle.app
 ```
 
 Or: System Settings → Privacy & Security → **Open Anyway**.
+
+### Why approval is one-time
+
+Both Gatekeeper approval and the Accessibility grant are keyed to the app's code
+signature. An ad-hoc signature has no stable identity — its hash changes with
+every build — so each release looks like a different application, and both have
+to be given again.
+
+Releases are therefore signed with a fixed certificate, created once by
+`Scripts/make-release-identity.sh`. Approve and grant once; upgrades keep both.
 
 ### Why the warning exists
 
