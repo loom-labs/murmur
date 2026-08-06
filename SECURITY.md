@@ -45,9 +45,19 @@ That returns nothing on a running instance.
 **Audio** is held in memory, transcribed, and discarded. It is never written to
 disk and never leaves the machine.
 
-**Screen captures** are written to the per-user temporary directory
-(`/var/folders/…/T/`, mode `0700`), read once by the OCR pass, and deleted
-immediately afterwards.
+**Transcripts** are held only as long as the "Copy Last Transcript" menu item
+needs them, and are dropped after five minutes. Dictated text can be a password
+or an address; keeping it for the life of the process, one menu click from the
+clipboard, buys nothing.
+
+**Nothing Beagle handles is written to disk at all** — no transcript history,
+no audio files, no captured images. The only thing it persists is your
+settings.
+
+**Screen captures** never touch the disk. The region is captured in-process
+with ScreenCaptureKit, held as a `CGImage`, recognised by Vision, and released.
+Beagle's own windows are excluded from the capture filter, so the selection
+overlay and the orb are not in the pixels.
 
 **The clipboard** is borrowed briefly to paste a transcript, then restored.
 Two deliberate protections:
@@ -62,7 +72,10 @@ Two deliberate protections:
   apps do not archive text you dictated.
 
 **Logs** record lengths, durations, and timings — never transcript text,
-selections, or recognised screen content. Check for yourself:
+selections, or recognised screen content. Error descriptions from the speech
+libraries are logged at `.private` rather than `.public`, because they can
+quote input-derived detail and a `.public` entry persists in the system log and
+is collected by `sysdiagnose`. Check for yourself:
 
 ```bash
 log show --predicate 'subsystem == "ai.loomlabs.beagle"' --last 1h --info

@@ -32,14 +32,11 @@ public enum ScreenTextError: LocalizedError {
 
 /// Captures a region of the screen and reads the text in it.
 ///
-/// Region selection delegates to `/usr/sbin/screencapture -i`, the same binary
-/// behind ⌘⇧4. Reusing it means the crosshair, the Escape-to-cancel behaviour,
-/// the window-snapping, and the Screen Recording permission prompt all match
-/// what the user already knows, for none of the code a custom overlay would
-/// cost.
-///
-/// Recognition uses Vision, which is on-device and free — no model download and
-/// nothing leaves the machine, consistent with the rest of Beagle.
+/// Capture runs in-process through ScreenCaptureKit and recognition through
+/// Vision, so a captured region exists only as a `CGImage` in memory and is
+/// never written to disk. An earlier version shelled out to
+/// `/usr/sbin/screencapture`, which both broke TCC attribution and left a PNG
+/// of the user's screen in the temporary directory between capture and OCR.
 @MainActor
 public enum ScreenTextReader {
 
