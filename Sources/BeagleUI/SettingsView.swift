@@ -131,10 +131,12 @@ private struct PermissionSettings: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Relaunch to finish").font(.body.weight(.medium))
-                            Text("Accessibility is granted, but macOS only hands it to Beagle on a fresh launch.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            Text(
+                                "Accessibility is granted, but macOS only hands it to Beagle on a fresh launch."
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                         }
                         Spacer()
                         Button("Relaunch") { Permissions.relaunch() }
