@@ -87,6 +87,10 @@ swift format lint -r -s Sources Tests # check
 
 Beyond formatting:
 
+- **No `#Preview`.** That macro is implemented by a compiler plugin bundled with
+  Xcode. Murmur builds with the Command Line Tools toolchain — in CI and for
+  contributors without a full Xcode install — and `#Preview` fails to compile
+  there. Preview views by running the app.
 - **Keep `MurmurCore` free of AppKit.** It is the layer that can be unit tested
   without a window server, and that is worth protecting.
 - **Comments explain why, not what.** If the code needs a paragraph to describe
