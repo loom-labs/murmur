@@ -3,6 +3,10 @@
 # Create a stable code-signing identity for releases and upload it to GitHub
 # Actions as a secret.
 #
+# MAINTAINERS ONLY, AND ONLY ONCE. Users of Beagle never run this — they just
+# install the app. This runs once for the lifetime of the project, on the
+# machine of whoever administers the repository.
+#
 # Why this exists
 # ---------------
 # Releases are signed ad-hoc by default, and an ad-hoc signature has no stable

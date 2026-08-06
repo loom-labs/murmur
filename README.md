@@ -98,12 +98,8 @@ Or: System Settings → Privacy & Security → **Open Anyway**.
 ### Why approval is one-time
 
 Both Gatekeeper approval and the Accessibility grant are keyed to the app's code
-signature. An ad-hoc signature has no stable identity — its hash changes with
-every build — so each release looks like a different application, and both have
-to be given again.
-
-Releases are therefore signed with a fixed certificate, created once by
-`Scripts/make-release-identity.sh`. Approve and grant once; upgrades keep both.
+signature, and every release is signed with the same certificate. Approve and
+grant once; upgrades keep both.
 
 ### Why the warning exists
 
@@ -168,6 +164,33 @@ The package splits into three targets: `BeagleCore` (audio, speech engines,
 settings — no AppKit), `BeagleUI` (SwiftUI views), and `BeagleApp` (lifecycle,
 hotkeys, windows). See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch and
 commit conventions.
+
+## Releasing
+
+Releases are cut automatically when a pull request merges to `main` with
+`#patch`, `#minor`, or `#major` in its title. Nothing needs running by hand.
+
+### One-time: the release signing certificate
+
+**Maintainers only — users never run this.**
+
+```bash
+Scripts/make-release-identity.sh
+```
+
+Run once for the lifetime of the project. It generates a self-signed certificate
+and uploads it to GitHub Actions as an encrypted secret, after which every
+release is signed with the same identity.
+
+That stability is what makes approval stick. Both Gatekeeper and macOS TCC key
+their decisions to the code signature, so an ad-hoc build — whose hash changes
+every time — looks like a different application on every upgrade, and users have
+to re-approve Gatekeeper and re-grant Accessibility each release.
+
+It does not remove the first-launch Gatekeeper warning. That needs notarization,
+which needs a paid Apple Developer Program membership. The release workflow
+notarizes automatically if `APPLE_ID`, `APPLE_TEAM_ID`, and `APPLE_APP_PASSWORD`
+are set; without them it signs and ships unnotarized.
 
 ## License
 
