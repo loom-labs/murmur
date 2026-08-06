@@ -5,6 +5,8 @@ import Foundation
 /// Errors raised while moving text in or out of other applications.
 public enum TextInjectionError: LocalizedError {
     case accessibilityNotGranted
+    /// Granted, but this process started before the grant and cannot use it.
+    case accessibilityNeedsRelaunch
     case eventCreationFailed
     case nothingSelected
 
@@ -12,6 +14,10 @@ public enum TextInjectionError: LocalizedError {
         switch self {
         case .accessibilityNotGranted:
             return "Accessibility is off — the transcript is on your clipboard."
+        case .accessibilityNeedsRelaunch:
+            // "Grant it" is useless advice to someone who already did, and
+            // relaunching is the only thing that helps.
+            return "Relaunch Beagle to finish enabling Accessibility — the transcript is on your clipboard."
         case .eventCreationFailed:
             return "Could not synthesize a keyboard event."
         case .nothingSelected:
@@ -81,7 +87,9 @@ public enum TextInjector {
         // transcript entirely and leaving no trace of what went wrong.
         guard canPostEvents else {
             copyToClipboard(text)
-            throw TextInjectionError.accessibilityNotGranted
+            throw Permissions.accessibilityNeedsRelaunch
+                ? TextInjectionError.accessibilityNeedsRelaunch
+                : TextInjectionError.accessibilityNotGranted
         }
 
         let pasteboard = NSPasteboard.general
@@ -132,7 +140,9 @@ public enum TextInjector {
     /// - Returns: The selected text, or `nil` when nothing is selected.
     public static func readSelection() async throws -> String? {
         guard canPostEvents else {
-            throw TextInjectionError.accessibilityNotGranted
+            throw Permissions.accessibilityNeedsRelaunch
+                ? TextInjectionError.accessibilityNeedsRelaunch
+                : TextInjectionError.accessibilityNotGranted
         }
 
         let pasteboard = NSPasteboard.general

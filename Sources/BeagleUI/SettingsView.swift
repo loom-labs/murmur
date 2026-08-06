@@ -103,9 +103,13 @@ private struct GeneralSettings: View {
 
 private struct PermissionSettings: View {
 
-    /// Re-read on appear rather than observed: permissions change in System
+    /// Re-read on a timer rather than observed: permissions change in System
     /// Settings, outside this process, and macOS offers no change notification.
+    /// Polling only while this pane is on screen keeps it free.
     @State private var granted: [Permission: Bool] = [:]
+    @State private var needsRelaunch = false
+
+    private let poll = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
         Form {
@@ -122,27 +126,43 @@ private struct PermissionSettings: View {
                     .textCase(nil)
             }
 
-            Section {
-                Button("Refresh") { refresh() }
+            if needsRelaunch {
+                Section {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Relaunch to finish").font(.body.weight(.medium))
+                            Text(
+                                "Accessibility is granted, but macOS only hands it to Beagle on a fresh launch."
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Button("Relaunch") { Permissions.relaunch() }
+                            .buttonStyle(.borderedProminent)
+                    }
+                }
             }
         }
         .formStyle(.grouped)
         .onAppear(perform: refresh)
+        .onReceive(poll) { _ in refresh() }
     }
 
     private func refresh() {
         for permission in Permission.allCases {
             granted[permission] = Permissions.isGranted(permission)
         }
+        needsRelaunch = Permissions.accessibilityNeedsRelaunch
     }
 
     private func request(_ permission: Permission) {
         Task {
             await Permissions.request(permission)
-            // The Accessibility switch is flipped by hand in System Settings, so
-            // the answer is rarely available immediately after the prompt.
+            // No re-read here: the switch is flipped by hand in System Settings,
+            // so the answer is never ready this soon. The poll picks it up.
             Permissions.openSettings(for: permission)
-            refresh()
         }
     }
 }

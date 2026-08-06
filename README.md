@@ -70,27 +70,41 @@ FluidAudio-based app you already run.
 
 ## Install
 
-Download the DMG from [Releases](https://github.com/loom-labs/beagle/releases),
-drag `Beagle.app` to `/Applications`, and launch it.
+### Homebrew
 
-The build is ad-hoc signed rather than notarized, so on first launch macOS says
-*"Apple could not verify Beagle is free of malware."* That is Apple reporting
-the **absence of notarization**, not a finding — notarizing requires a paid
-Apple Developer account ([details](docs/RELEASING.md)). Clear the quarantine
-flag:
+```bash
+brew tap loom-labs/beagle https://github.com/loom-labs/beagle
+brew install --cask --no-quarantine beagle
+```
+
+`--no-quarantine` matters. Homebrew quarantines casks by default, so without it
+you still get "Apple could not verify Beagle is free of malware" — the same
+warning as a manual download. With it, Beagle opens straight away.
+
+### Direct download
+
+Grab the DMG from [the latest release](https://github.com/loom-labs/beagle/releases/latest),
+drag Beagle to Applications, then clear the quarantine flag:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Beagle.app
 ```
 
-Or: System Settings → Privacy & Security → **Open Anyway**. On macOS 15 and
-later the old right-click → Open shortcut no longer works.
+Or: System Settings → Privacy & Security → **Open Anyway**.
 
-### Build from source
+### Why the warning exists
 
-```bash
-git clone https://github.com/loom-labs/beagle.git && cd beagle && ./Scripts/build-app.sh
-```
+The build is signed ad-hoc, not notarized. Notarization requires a paid Apple
+Developer Program membership; until this project has one, macOS has no issuer to
+check the signature against. The release workflow already supports notarizing —
+it activates automatically once the signing secrets are configured.
+
+### After installing
+
+Grant Accessibility when asked, **then relaunch Beagle**. macOS only hands the
+permission to a freshly launched process, so until you do, dictation copies to
+the clipboard instead of pasting. Beagle detects this state and offers a
+Relaunch button rather than leaving you guessing.
 
 ## Permissions
 

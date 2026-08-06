@@ -71,6 +71,34 @@ public enum Permissions {
         }
     }
 
+    /// Whether Accessibility has been granted but this process cannot yet act
+    /// on it, so a relaunch is required.
+    ///
+    /// The two APIs behave differently, and the difference is diagnostic:
+    /// `AXIsProcessTrusted()` re-reads the TCC database on every call, while
+    /// `CGPreflightPostEventAccess()` caches its answer for the lifetime of the
+    /// process. So when the user flips the switch in System Settings, AX starts
+    /// saying `true` immediately and CG keeps saying `false` until the app is
+    /// restarted — and event posting genuinely does not work in between.
+    ///
+    /// Disagreement therefore means exactly one thing: the grant landed, and we
+    /// need to relaunch to pick it up. That is a far better thing to tell a user
+    /// than silently falling back to the clipboard.
+    public static var accessibilityNeedsRelaunch: Bool {
+        AXIsProcessTrusted() && !CGPreflightPostEventAccess()
+    }
+
+    /// Relaunch the app, to pick up an Accessibility grant.
+    public static func relaunch() {
+        let url = Bundle.main.bundleURL
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.createsNewApplicationInstance = true
+
+        NSWorkspace.shared.openApplication(at: url, configuration: configuration) { _, _ in
+            Task { @MainActor in NSApplication.shared.terminate(nil) }
+        }
+    }
+
     /// Request `permission`, showing the system prompt if it has never been asked.
     ///
     /// - Returns: `true` when granted.
