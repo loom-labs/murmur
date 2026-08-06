@@ -51,25 +51,36 @@ public enum MenuBarGlyph {
     ) {
         let w = rect.width
         let h = rect.height
-        let headW = w * 0.56
-        let headH = h * 0.66
-        let centre = CGPoint(x: rect.midX, y: rect.midY + h * 0.04)
+        let headW = w * 0.50
+        let headH = h * 0.60
+        let centre = CGPoint(x: rect.midX, y: rect.midY + h * 0.02)
 
+        // Line art rather than a silhouette. A filled head at 18 points reads as
+        // an anonymous blob; an outline with a couple of solid accents keeps the
+        // ears, snout, and eyes legible, and sits better beside the other
+        // stroked glyphs in the menu bar.
+        let stroke = max(1, w * 0.075)
+        context.setStrokeColor(NSColor.black.cgColor)
         context.setFillColor(NSColor.black.cgColor)
+        context.setLineWidth(stroke)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
 
-        // Ears first, so the head overlaps them.
-        let earW = w * 0.24
-        let earH = h * 0.62
+        // Ears, outlined, swinging from the top of the head.
+        let earW = w * 0.22
+        let earH = h * 0.52
         for sign in [CGFloat(-1), 1] {
             context.saveGState()
-            context.translateBy(x: centre.x + sign * headW * 0.46, y: centre.y + h * 0.02)
-            context.rotate(by: sign * (18 + earLift) * .pi / 180)
-            context.fillEllipse(in: CGRect(x: -earW / 2, y: -earH / 2, width: earW, height: earH))
+            context.translateBy(x: centre.x + sign * headW * 0.52, y: centre.y + h * 0.06)
+            context.rotate(by: sign * (20 + earLift) * .pi / 180)
+            context.strokeEllipse(
+                in: CGRect(x: -earW / 2, y: -earH / 2, width: earW, height: earH)
+            )
             context.restoreGState()
         }
 
-        // Head
-        context.fillEllipse(
+        // Head.
+        context.strokeEllipse(
             in: CGRect(
                 x: centre.x - headW / 2,
                 y: centre.y - headH / 2,
@@ -78,31 +89,36 @@ public enum MenuBarGlyph {
             )
         )
 
-        // Muzzle, punched out so the silhouette reads as a snout rather than a
-        // blob. Clearing to transparent is what makes the shape legible once
-        // macOS fills the template with a single colour.
-        context.saveGState()
-        context.setBlendMode(.clear)
-        let muzzleW = headW * 0.42
-        let muzzleH = headH * (mouthOpen ? 0.40 : 0.26)
-        context.fillEllipse(
-            in: CGRect(
-                x: centre.x - muzzleW / 2,
-                y: centre.y - headH * 0.46,
-                width: muzzleW,
-                height: muzzleH
+        // The only solid fills: two eyes and a nose. Enough to make it a face.
+        let eye = max(1.1, w * 0.075)
+        for sign in [CGFloat(-1), 1] {
+            context.fillEllipse(
+                in: CGRect(
+                    x: centre.x + sign * headW * 0.24 - eye / 2,
+                    y: centre.y + headH * 0.10 - eye / 2,
+                    width: eye,
+                    height: eye
+                )
             )
-        )
-        context.restoreGState()
+        }
 
-        // Nose, sitting in the cleared muzzle.
+        let noseW = w * 0.13
+        let noseH = h * 0.075
         context.fillEllipse(
             in: CGRect(
-                x: centre.x - headW * 0.10,
-                y: centre.y - headH * 0.34,
-                width: headW * 0.20,
-                height: headH * 0.14
+                x: centre.x - noseW / 2,
+                y: centre.y - headH * 0.30,
+                width: noseW,
+                height: noseH
             )
         )
+
+        // A short muzzle line, opening while speaking.
+        if mouthOpen {
+            let jaw = centre.y - headH * 0.30 - noseH
+            context.move(to: CGPoint(x: centre.x - w * 0.055, y: jaw))
+            context.addLine(to: CGPoint(x: centre.x + w * 0.055, y: jaw))
+            context.strokePath()
+        }
     }
 }
