@@ -91,8 +91,11 @@ Beyond formatting:
   Xcode. Murmur builds with the Command Line Tools toolchain — in CI and for
   contributors without a full Xcode install — and `#Preview` fails to compile
   there. Preview views by running the app.
-- **Keep `MurmurCore` free of AppKit.** It is the layer that can be unit tested
-  without a window server, and that is worth protecting.
+- **Keep `MurmurCore` free of SwiftUI.** Core owns audio, the speech engines,
+  input, and orchestration; it imports AppKit where the platform requires it
+  (the pasteboard, permissions, `NSEvent`). What it must never contain is a
+  `View`. That boundary is what keeps the engines testable and keeps the UI
+  layer replaceable.
 - **Comments explain why, not what.** If the code needs a paragraph to describe
   what it does, the code is the problem.
 - **Handle errors explicitly.** No silent `try?` on anything a user would want
