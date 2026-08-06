@@ -20,6 +20,13 @@ public struct MenuBarContent: View {
     public var body: some View {
         Text(controller.activity.summary)
 
+        if !TextInjector.canPostEvents {
+            Text("Accessibility is off — transcripts go to the clipboard")
+            Button("Open Accessibility Settings…") {
+                Permissions.openSettings(for: .accessibility)
+            }
+        }
+
         Divider()
 
         if controller.isSpeaking {
