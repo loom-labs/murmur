@@ -19,9 +19,11 @@ struct BeagleMain: App {
                 delegate.showSettings()
             }
         } label: {
-            // The glyph doubles as the status indicator, so a glance at the
-            // menu bar answers "is it listening?" without opening anything.
-            Image(systemName: delegate.controller.activity.symbolName)
+            // A drawn beagle head rather than an SF Symbol, and it doubles as
+            // the status indicator: the ears lift when he is listening, so a
+            // glance at the menu bar answers "is it hearing me?" without
+            // opening anything.
+            Image(nsImage: MenuBarGlyph.image(for: delegate.controller.activity))
         }
         .menuBarExtraStyle(.menu)
     }

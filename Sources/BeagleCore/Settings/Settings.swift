@@ -39,6 +39,22 @@ public struct Settings: Equatable, Sendable {
         }
     }
 
+    /// Which appearance the app's own windows use.
+    public enum Appearance: String, CaseIterable, Sendable {
+        /// Follow the system setting, including its automatic day/night switch.
+        case system
+        case light
+        case dark
+
+        public var title: String {
+            switch self {
+            case .system: return "Match System"
+            case .light: return "Light"
+            case .dark: return "Dark"
+            }
+        }
+    }
+
     /// What Beagle does with a finished transcript.
     public enum TranscriptDelivery: String, CaseIterable, Sendable {
         /// Paste at the cursor in the frontmost app.
@@ -57,6 +73,7 @@ public struct Settings: Equatable, Sendable {
     public var dictationMode: DictationMode
     public var transcriptDelivery: TranscriptDelivery
     public var orbStyle: OrbStyle
+    public var appearance: Appearance
 
     /// Play a short tick when recording starts and stops.
     public var playFeedbackSounds: Bool
@@ -75,6 +92,7 @@ public struct Settings: Equatable, Sendable {
         dictationMode: .pushToTalk,
         transcriptDelivery: .paste,
         orbStyle: .beagle,
+        appearance: .system,
         playFeedbackSounds: true,
         showsOrb: true,
         speechRate: 1.0,
@@ -92,6 +110,7 @@ public final class SettingsStore: @unchecked Sendable {
         static let dictationMode = "dictationMode"
         static let transcriptDelivery = "transcriptDelivery"
         static let orbStyle = "orbStyle"
+        static let appearance = "appearance"
         static let playFeedbackSounds = "playFeedbackSounds"
         static let showsOrb = "showsOrb"
         static let speechRate = "speechRate"
@@ -115,6 +134,7 @@ public final class SettingsStore: @unchecked Sendable {
             Key.dictationMode: fallback.dictationMode.rawValue,
             Key.transcriptDelivery: fallback.transcriptDelivery.rawValue,
             Key.orbStyle: fallback.orbStyle.rawValue,
+            Key.appearance: fallback.appearance.rawValue,
             Key.playFeedbackSounds: fallback.playFeedbackSounds,
             Key.showsOrb: fallback.showsOrb,
             Key.speechRate: fallback.speechRate,
@@ -131,6 +151,8 @@ public final class SettingsStore: @unchecked Sendable {
                     .flatMap(Settings.TranscriptDelivery.init(rawValue:)) ?? .paste,
                 orbStyle: defaults.string(forKey: Key.orbStyle)
                     .flatMap(Settings.OrbStyle.init(rawValue:)) ?? .beagle,
+                appearance: defaults.string(forKey: Key.appearance)
+                    .flatMap(Settings.Appearance.init(rawValue:)) ?? .system,
                 playFeedbackSounds: defaults.bool(forKey: Key.playFeedbackSounds),
                 showsOrb: defaults.bool(forKey: Key.showsOrb),
                 speechRate: Self.clampRate(defaults.float(forKey: Key.speechRate)),
@@ -141,6 +163,7 @@ public final class SettingsStore: @unchecked Sendable {
             defaults.set(newValue.dictationMode.rawValue, forKey: Key.dictationMode)
             defaults.set(newValue.transcriptDelivery.rawValue, forKey: Key.transcriptDelivery)
             defaults.set(newValue.orbStyle.rawValue, forKey: Key.orbStyle)
+            defaults.set(newValue.appearance.rawValue, forKey: Key.appearance)
             defaults.set(newValue.playFeedbackSounds, forKey: Key.playFeedbackSounds)
             defaults.set(newValue.showsOrb, forKey: Key.showsOrb)
             defaults.set(Self.clampRate(newValue.speechRate), forKey: Key.speechRate)

@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Beagle — local voice in, local voice out, for macOS</title>
+<meta name="description" content="Dictate into any app and have your Mac read anything back. Speech recognition and speech synthesis running entirely on the Apple Neural Engine. No cloud, no account, no telemetry.">
+<link rel="icon" href="logo-256.png">
+
+<meta property="og:title" content="Beagle — local voice for macOS">
+<meta property="og:description" content="Dictation and text-to-speech that never leave your Mac.">
+<meta property="og:image" content="https://loom-labs.github.io/beagle/logo.png">
+<meta property="og:type" content="website">
+
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --surface: #fffdf9;
+    --ink: #1c1a17;
+    --muted: #6b6255;
+    --line: #e2dbcd;
+    --brand: #ba763a;
+    --brand-deep: #8d5526;
+    --thread: #cf2e2e;
+    --sky: #7ec8e3;
+
+    --shell: min(1100px, 92vw);
+    --radius: 18px;
+    --ease: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181d;
+      --surface: #1e2128;
+      --ink: #f2efe9;
+      --muted: #9c9689;
+      --line: #2e323b;
+      --brand: #d9945a;
+      --brand-deep: #f0b184;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, -apple-system, "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; }
+
+  .shell { width: var(--shell); margin-inline: auto; }
+
+  /* ---------- Hero ---------- */
+
+  .hero {
+    position: relative;
+    padding: clamp(3.5rem, 3rem + 6vw, 8rem) 0 clamp(3rem, 2rem + 5vw, 6rem);
+    text-align: center;
+    overflow: hidden;
+  }
+
+  /* Soft wash behind the mark, so the page has depth without a stock blob. */
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: -40% 50% auto;
+    width: 120vw;
+    height: 70vh;
+    transform: translateX(-50%);
+    background: radial-gradient(closest-side, color-mix(in oklab, var(--sky) 42%, transparent), transparent 72%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero > * { position: relative; z-index: 1; }
+
+  .mark {
+    width: clamp(112px, 9vw, 148px);
+    height: auto;
+    border-radius: 26%;
+    box-shadow: 0 18px 44px -18px rgba(0, 0, 0, .5);
+    animation: settle .9s var(--ease) both;
+  }
+
+  @keyframes settle {
+    from { opacity: 0; transform: translateY(14px) scale(.96); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  h1 {
+    margin: 1.4rem 0 .35rem;
+    font-size: clamp(2.9rem, 1.6rem + 5.4vw, 5.4rem);
+    letter-spacing: -.035em;
+    line-height: .96;
+    font-weight: 680;
+  }
+
+  .tagline {
+    margin: 0 auto;
+    max-width: 34ch;
+    font-size: clamp(1.06rem, 1rem + .4vw, 1.32rem);
+    color: var(--muted);
+  }
+
+  .dedication {
+    margin-top: .9rem;
+    font-size: .92rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .dedication b { color: var(--thread); font-style: normal; font-weight: 600; }
+
+  .cta {
+    display: flex;
+    gap: .7rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2.1rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .78rem 1.35rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-weight: 580;
+    text-decoration: none;
+    transition: transform .22s var(--ease), box-shadow .22s var(--ease), background .22s var(--ease);
+  }
+
+  .btn-primary {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--brand) 90%, black);
+  }
+
+  .btn-ghost { border-color: var(--line); background: var(--surface); }
+
+  .btn:hover { transform: translateY(-2px); }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+
+  .req { margin-top: .95rem; font-size: .86rem; color: var(--muted); }
+
+  /* ---------- Sections ---------- */
+
+  section { padding: clamp(2.6rem, 2rem + 3vw, 5rem) 0; }
+
+  h2 {
+    font-size: clamp(1.5rem, 1.2rem + 1.1vw, 2.1rem);
+    letter-spacing: -.02em;
+    margin: 0 0 1.6rem;
+  }
+
+  /* Bento: the first card spans two columns so the grid is not a uniform
+     wall of equal boxes. */
+  .bento {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(258px, 1fr));
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.45rem;
+    transition: transform .25s var(--ease), border-color .25s var(--ease);
+  }
+
+  .card:hover { transform: translateY(-3px); border-color: var(--brand); }
+
+  .card.wide { grid-column: span 2; }
+  @media (max-width: 620px) { .card.wide { grid-column: span 1; } }
+
+  .card h3 { margin: .1rem 0 .45rem; font-size: 1.12rem; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+
+  kbd {
+    display: inline-block;
+    padding: .16rem .48rem;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 7px;
+    background: var(--bg);
+    font: 600 .84em/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+    color: var(--ink);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .95rem;
+  }
+
+  th, td {
+    text-align: left;
+    padding: .78rem .6rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  th { font-weight: 600; color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
+  td:first-child { font-weight: 560; }
+
+  .scroller { overflow-x: auto; }
+
+  .privacy {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--thread);
+    border-radius: var(--radius);
+    padding: 1.7rem 1.6rem;
+  }
+
+  .privacy p { margin: 0 0 .8rem; }
+  .privacy p:last-child { margin-bottom: 0; }
+
+  footer {
+    padding: 3rem 0 4rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .9rem;
+    text-align: center;
+  }
+
+  footer a { color: var(--brand); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="shell">
+    <img class="mark" src="logo.png" alt="The Beagle app icon: a tricolour beagle wearing a red thread">
+    <h1>Beagle</h1>
+    <p class="tagline">Local voice in, local voice out — for&nbsp;macOS.</p>
+    <p class="dedication">Named for, and dedicated to, Hugo — who wears the <b>red thread</b>.</p>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/loom-labs/beagle/releases/latest">Download for Apple Silicon</a>
+      <a class="btn btn-ghost" href="https://github.com/loom-labs/beagle">Source on GitHub</a>
+    </div>
+    <p class="req">macOS 14 or later · Apple Silicon · ~8&nbsp;MB app, ~1&nbsp;GB of models on first use</p>
+  </div>
+</header>
+
+<main>
+  <section class="shell">
+    <h2>What he does</h2>
+    <div class="bento">
+      <article class="card wide">
+        <h3>Dictate anywhere</h3>
+        <p>Hold <kbd>⇧⌘L</kbd>, talk, let go. The transcript is pasted at your cursor in whatever app you were already typing in — editor, browser, chat, terminal. His ears lift while he hears you, so you never have to wonder whether it is listening.</p>
+      </article>
+      <article class="card">
+        <h3>Read anything aloud</h3>
+        <p>Select text and press <kbd>⇧⌘S</kbd>, or drag a paragraph or a <code>.txt</code> file onto the floating orb.</p>
+      </article>
+      <article class="card">
+        <h3>Read the screen</h3>
+        <p><kbd>⇧⌘R</kbd> snaps a region of the screen, reads the text out of it, and speaks it. Useful for anything you cannot select.</p>
+      </article>
+      <article class="card">
+        <h3>Stay out of the way</h3>
+        <p>A 44-point orb and a menu bar icon. No Dock tile, no window unless you ask for one.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="shell">
+    <h2>Why he is quick</h2>
+    <p style="color:var(--muted); max-width: 62ch;">
+      A single statically linked Swift binary — no Electron, no Python, no bundled runtime.
+      Inference runs on the Apple Neural Engine rather than the GPU, which is what makes an
+      always-on voice app practical instead of something that spins your fans.
+    </p>
+    <div class="scroller">
+      <table>
+        <thead>
+          <tr><th></th><th>Model</th><th>Size</th><th>Speed</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Speech → text</td><td>Parakeet TDT v3 (0.6 B, int8)</td><td>~650 MB</td><td>~120× realtime</td></tr>
+          <tr><td>Text → speech</td><td>Kokoro-82M</td><td>~330 MB</td><td>3–11× realtime</td></tr>
+          <tr><td>Screen → text</td><td>Apple Vision</td><td>built in</td><td>instant</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="shell">
+    <h2>Nothing leaves your Mac</h2>
+    <div class="privacy">
+      <p>Beagle downloads its two models once, then never talks to the network again. There is no account, no API key, no analytics, and no crash reporting.</p>
+      <p>Your microphone audio is transcribed on device and discarded. Nothing you dictate, select, or capture is stored anywhere but your own machine.</p>
+      <p>It is Apache-2.0 licensed and the whole thing is on GitHub, so you do not have to take any of that on faith.</p>
+    </div>
+  </section>
+
+  <section class="shell">
+    <h2>What is next</h2>
+    <p style="color:var(--muted); max-width: 62ch;">
+      A third mode: a local conversation companion you can think out loud with — the same two
+      engines plus an on-device language model, with memory that stays on your Mac. Tracked in
+      <a href="https://github.com/loom-labs/beagle/issues/8">issue&nbsp;#8</a>.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <div class="shell">
+    <p>Built by <a href="https://github.com/loom-labs">Loom Labs</a> · Apache-2.0 · for Hugo 🐾</p>
+  </div>
+</footer>
+
+</body>
+</html>

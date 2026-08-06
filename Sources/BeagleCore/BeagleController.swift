@@ -81,6 +81,7 @@ public final class BeagleController {
             guard settings != oldValue else { return }
             settingsStore.current = settings
             if settings.dictationMode != oldValue.dictationMode { rebindHotKeys() }
+            if settings.appearance != oldValue.appearance { applyAppearance() }
         }
     }
 
@@ -107,6 +108,7 @@ public final class BeagleController {
 
     /// Register hotkeys and observe model loading. Call once at launch.
     public func start() {
+        applyAppearance()
         rebindHotKeys()
         observeModelPhases()
 
@@ -339,6 +341,20 @@ public final class BeagleController {
                 Task { @MainActor in self?.synthesisPhase = phase }
             }
         }
+    }
+
+    /// Force the app's own windows to the chosen appearance.
+    ///
+    /// `nil` hands control back to macOS, which is the default and also what
+    /// keeps the automatic day/night switch working. Set explicitly, it applies
+    /// to the settings window and the orb's material — not to other apps.
+    private func applyAppearance() {
+        NSApp.appearance =
+            switch settings.appearance {
+            case .system: nil
+            case .light: NSAppearance(named: .aqua)
+            case .dark: NSAppearance(named: .darkAqua)
+            }
     }
 
     // MARK: - Hotkeys

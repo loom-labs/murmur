@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/logo.png" alt="Beagle" width="132">
+
 # Beagle
 
 **Local voice in, local voice out — for macOS.**
@@ -55,6 +57,8 @@ Apache-2.0 Swift SDK that ships Core ML conversions of both models. Weights are
 downloaded once on first use and cached in
 `~/Library/Application Support/FluidAudio/Models`, shared with any other
 FluidAudio-based app you already run.
+
+**Website:** [loom-labs.github.io/beagle](https://loom-labs.github.io/beagle)
 
 ## Requirements
 
