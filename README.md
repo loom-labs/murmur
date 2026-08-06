@@ -73,12 +73,18 @@ FluidAudio-based app you already run.
 Download the DMG from [Releases](https://github.com/loom-labs/beagle/releases),
 drag `Beagle.app` to `/Applications`, and launch it.
 
-The build is ad-hoc signed rather than notarized, so Gatekeeper will complain the
-first time. Clear the quarantine flag:
+The build is ad-hoc signed rather than notarized, so on first launch macOS says
+*"Apple could not verify Beagle is free of malware."* That is Apple reporting
+the **absence of notarization**, not a finding — notarizing requires a paid
+Apple Developer account ([details](docs/RELEASING.md)). Clear the quarantine
+flag:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Beagle.app
 ```
+
+Or: System Settings → Privacy & Security → **Open Anyway**. On macOS 15 and
+later the old right-click → Open shortcut no longer works.
 
 ### Build from source
 
