@@ -66,13 +66,17 @@ public enum MenuBarGlyph {
         context.setLineCap(.round)
         context.setLineJoin(.round)
 
-        // Ears, outlined, swinging from the top of the head.
-        let earW = w * 0.22
-        let earH = h * 0.52
+        // Ears, outlined, flaring away from the head.
+        //
+        // The sign of the rotation is what makes them read as ears: swinging
+        // the bottoms outward gives the hanging silhouette a beagle has, where
+        // a smaller or inverted angle just looks like a rounded head.
+        let earW = w * 0.21
+        let earH = h * 0.56
         for sign in [CGFloat(-1), 1] {
             context.saveGState()
-            context.translateBy(x: centre.x + sign * headW * 0.52, y: centre.y + h * 0.06)
-            context.rotate(by: sign * (20 + earLift) * .pi / 180)
+            context.translateBy(x: centre.x + sign * headW * 0.58, y: centre.y + h * 0.03)
+            context.rotate(by: sign * (34 + earLift) * .pi / 180)
             context.strokeEllipse(
                 in: CGRect(x: -earW / 2, y: -earH / 2, width: earW, height: earH)
             )
