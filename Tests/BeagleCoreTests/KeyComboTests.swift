@@ -17,9 +17,10 @@ struct KeyComboTests {
 
     @Test("Display name pairs modifiers with the key")
     func displayName() {
-        #expect(KeyCombo.dictation.displayName == "⇧⌘L")
-        #expect(KeyCombo.speakSelection.displayName == "⇧⌘S")
-        #expect(KeyCombo.readScreen.displayName == "⇧⌘R")
+        // ⌃⌥ rather than ⇧⌘: the latter collides with common app shortcuts.
+        #expect(KeyCombo.dictation.displayName == "⌃⌥L")
+        #expect(KeyCombo.speakSelection.displayName == "⌃⌥K")
+        #expect(KeyCombo.readScreen.displayName == "⌃⌥J")
     }
 
     @Test("Special keys render as glyphs, not codes")
@@ -81,7 +82,7 @@ struct KeyComboTests {
         let decoded = try JSONDecoder().decode(KeyCombo.self, from: data)
 
         #expect(decoded == original)
-        #expect(decoded.displayName == "⇧⌘L")
+        #expect(decoded.displayName == "⌃⌥L")
     }
 
     @Test("Defaults are distinct from one another")

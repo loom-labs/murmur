@@ -4,7 +4,7 @@ import Foundation
 /// A global keyboard shortcut: one key plus its modifiers.
 ///
 /// Stored as a virtual key code rather than a character so the shortcut stays
-/// in the same physical position across keyboard layouts — ⇧⌘L should be the
+/// in the same physical position across keyboard layouts — ⌃⌥L should be the
 /// same key on QWERTY and AZERTY.
 public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
@@ -64,19 +64,32 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Defaults
 
+    // Control-Option rather than Shift-Command. ⇧⌘ combinations collide with a
+    // lot of common application shortcuts; ⌃⌥ is close to unused, so Beagle can
+    // claim it system-wide without taking a key away from anything.
+    //
+    // Fn is deliberately not offered. `RegisterEventHotKey` accepts only
+    // ⌘/⇧/⌥/⌃ — Fn is not a Carbon modifier — so an Fn shortcut would require a
+    // `CGEventTap`, putting Beagle in the path of every keystroke on the
+    // machine. That is a privacy and performance cost the app is built to
+    // avoid; see SECURITY.md.
+
     /// Start and stop dictation. Held in push-to-talk mode.
-    public static let dictation = KeyCombo(keyCode: UInt32(kVK_ANSI_L), modifiers: [.command, .shift])
+    public static let dictation = KeyCombo(
+        keyCode: UInt32(kVK_ANSI_L),
+        modifiers: [.control, .option]
+    )
 
     /// Read the current selection aloud.
     public static let speakSelection = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_S),
-        modifiers: [.command, .shift]
+        keyCode: UInt32(kVK_ANSI_K),
+        modifiers: [.control, .option]
     )
 
     /// Capture a region of the screen and read it aloud.
     public static let readScreen = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_R),
-        modifiers: [.command, .shift]
+        keyCode: UInt32(kVK_ANSI_J),
+        modifiers: [.control, .option]
     )
 
     // MARK: - Key names
