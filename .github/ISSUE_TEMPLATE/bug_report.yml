@@ -1,0 +1,39 @@
+name: Bug report
+description: Something in Murmur does not work
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what you got instead.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Murmur version
+      placeholder: "0.1.0 (see the menu bar dropdown)"
+    validations:
+      required: true
+
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and chip
+      placeholder: "macOS 15.2, M2 Pro"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Output of the command below, covering the minute the problem happened.
+      value: |
+        ```
+        log show --predicate 'subsystem == "ai.loomlabs.murmur"' --last 10m
+        ```
+      render: shell
