@@ -101,9 +101,11 @@ public struct ShortcutRecorder: View {
             return
         }
 
-        // Registering is the only way to know whether something else owns it.
+        // Only Beagle's own shortcuts can be checked. macOS offers no way to ask
+        // whether another application holds a combination, so promising that
+        // would be a claim the code cannot make.
         guard candidate == combo || HotKeyCenter.shared.isAvailable(candidate) else {
-            problem = "\(candidate.displayName) is already taken by another app."
+            problem = "\(candidate.displayName) is already used by another Beagle shortcut."
             return
         }
 

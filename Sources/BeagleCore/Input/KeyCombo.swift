@@ -64,9 +64,19 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Defaults
 
-    // Control-Option rather than Shift-Command. ⇧⌘ combinations collide with a
-    // lot of common application shortcuts; ⌃⌥ is close to unused, so Beagle can
-    // claim it system-wide without taking a key away from anything.
+    // Control-Option-Command, not Control-Option. ⌃⌥ turned out to be far from
+    // unused: Rectangle claims that whole namespace for window management, and
+    // ⌃⌥J and ⌃⌥K are its bottom-left and bottom-right quarters — a direct
+    // collision with two of the three defaults below. Window managers are
+    // common enough that ⌃⌥ is not safe to assume.
+    //
+    // Adding ⌘ steps outside it. Three-modifier combinations are rare in
+    // application shortcuts precisely because they are awkward to type by
+    // accident, which is what makes them safe to hold system-wide.
+    //
+    // Note that macOS cannot report which combinations other applications
+    // already own — see `HotKeyCenter.isAvailable` — so this is chosen by
+    // avoiding a known conflict, not by verifying the field is clear.
     //
     // Fn is deliberately not offered. `RegisterEventHotKey` accepts only
     // ⌘/⇧/⌥/⌃ — Fn is not a Carbon modifier — so an Fn shortcut would require a
@@ -77,19 +87,19 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
     /// Start and stop dictation. Held in push-to-talk mode.
     public static let dictation = KeyCombo(
         keyCode: UInt32(kVK_ANSI_L),
-        modifiers: [.control, .option]
+        modifiers: [.control, .option, .command]
     )
 
     /// Read the current selection aloud.
     public static let speakSelection = KeyCombo(
         keyCode: UInt32(kVK_ANSI_K),
-        modifiers: [.control, .option]
+        modifiers: [.control, .option, .command]
     )
 
     /// Capture a region of the screen and read it aloud.
     public static let readScreen = KeyCombo(
         keyCode: UInt32(kVK_ANSI_J),
-        modifiers: [.control, .option]
+        modifiers: [.control, .option, .command]
     )
 
     // MARK: - Key names

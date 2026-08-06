@@ -164,21 +164,7 @@ public final class HotKeyCenter {
     /// before saving a shortcut another app already owns.
     public func isAvailable(_ combo: KeyCombo) -> Bool {
         guard combo.isValid else { return false }
-        guard registrations.values.allSatisfy({ $0.combo != combo }) else { return false }
-
-        let probeID = EventHotKeyID(signature: Self.signature, id: .max)
-        var reference: EventHotKeyRef?
-        let status = RegisterEventHotKey(
-            combo.keyCode,
-            combo.modifiers.carbonFlags,
-            probeID,
-            GetEventDispatcherTarget(),
-            0,
-            &reference
-        )
-        guard status == noErr, let reference else { return false }
-        UnregisterEventHotKey(reference)
-        return true
+        return registrations.values.allSatisfy { $0.combo != combo }
     }
 
     // MARK: - Carbon plumbing
