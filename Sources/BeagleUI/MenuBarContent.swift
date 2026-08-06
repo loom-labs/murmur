@@ -20,15 +20,18 @@ public struct MenuBarContent: View {
     public var body: some View {
         Text(controller.activity.summary)
 
+        // One line and one action. `controller.activity.summary` already says
+        // "Copied instead" when a paste falls back, so repeating the diagnosis
+        // three times was noise stacked on top of the thing it explained.
         if !TextInjector.canPostEvents {
-            Text(
-                Permissions.accessibilityNeedsRelaunch
-                    ? "Relaunch to finish enabling Accessibility"
-                    : "Accessibility is off — transcripts go to the clipboard"
-            )
-            Text("Remove any old Beagle entry first; the grant is tied to each build.")
-            Button("Open Accessibility Settings…") {
-                Permissions.openSettings(for: .accessibility)
+            if Permissions.accessibilityNeedsRelaunch {
+                Button("Relaunch to finish enabling Accessibility") {
+                    Permissions.relaunch()
+                }
+            } else {
+                Button("Enable Accessibility to paste automatically…") {
+                    Permissions.openSettings(for: .accessibility)
+                }
             }
         }
 

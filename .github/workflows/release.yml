@@ -86,8 +86,19 @@ jobs:
           security list-keychain -d user -s "$keychain" login.keychain-db
           rm -f "$RUNNER_TEMP/cert.p12"
 
-          identity="$(security find-identity -v -p codesigning "$keychain" \
-            | sed -n 's/.*"\(Developer ID Application.*\)"/\1/p' | head -1)"
+          # Take the SHA-1 hash, not the name. Two reasons:
+          #
+          #   * `-v` is omitted because it lists only identities that something
+          #     vouches for, and a self-signed certificate never is. But without
+          #     `-v`, macOS appends a trust status to the displayed name —
+          #     "Beagle Release Signing (CSSMERR_TP_NOT_TRUSTED)" — which
+          #     codesign then rejects as "no identity found".
+          #   * The name is only "Developer ID Application ..." when the
+          #     certificate came from Apple.
+          #
+          # The hash carries no suffix and is unambiguous either way.
+          identity="$(security find-identity -p codesigning "$keychain" \
+            | awk '/^ *[0-9]+\)/ {print $2; exit}')"
           echo "identity=$identity" >> "$GITHUB_OUTPUT"
           echo "Signing as: $identity"
 
@@ -99,12 +110,12 @@ jobs:
           if [ -n "${IDENTITY}" ]; then
             Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}" --sign "${IDENTITY}"
           else
-            echo "::warning::No Developer ID secret configured — shipping an ad-hoc signed build. Users will have to clear the quarantine flag by hand."
+            echo "::warning::No signing certificate configured — shipping an ad-hoc build. Its identity changes every release, so users must re-grant Accessibility each time. Run Scripts/make-release-identity.sh to fix that."
             Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}"
           fi
 
       - name: Notarize and staple
-        if: steps.version.outputs.release == 'true' && steps.signing.outputs.identity != ''
+        if: steps.version.outputs.release == 'true' && steps.signing.outputs.identity != '' && env.APPLE_ID != ''
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
