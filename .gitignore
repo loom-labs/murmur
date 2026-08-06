@@ -16,3 +16,6 @@ dist/
 ## Editors
 .vscode/
 .idea/
+
+## Browser preview snapshots
+docs/_orgpreview/

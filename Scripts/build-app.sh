@@ -148,7 +148,9 @@ printf 'APPL????' >"${contents}/PkgInfo"
 # signature is a hash of the binary, so it changes on every rebuild and macOS
 # treats each build as a new app — silently dropping the Accessibility grant.
 # See Scripts/make-signing-identity.sh.
-if [[ "${sign_identity}" == "-" ]] && security find-identity -v -p codesigning 2>/dev/null | grep -q "Beagle Dev"; then
+# No `-v`: that lists only *valid* identities, and a self-signed certificate is
+# never valid because nothing vouches for it. codesign still signs with it.
+if [[ "${sign_identity}" == "-" ]] && security find-identity -p codesigning 2>/dev/null | grep -q "Beagle Dev"; then
     sign_identity="Beagle Dev"
     echo "==> Found a stable signing identity; using it so permissions survive rebuilds"
 fi
