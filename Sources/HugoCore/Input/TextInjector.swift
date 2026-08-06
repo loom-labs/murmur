@@ -11,7 +11,7 @@ public enum TextInjectionError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .accessibilityNotGranted:
-            return "Hugo needs Accessibility access to type into other apps."
+            return "Accessibility is off — the transcript is on your clipboard."
         case .eventCreationFailed:
             return "Could not synthesize a keyboard event."
         case .nothingSelected:
@@ -48,10 +48,37 @@ public enum TextInjector {
         let changeCount: Int
     }
 
+    /// Whether this process may post synthetic keyboard events.
+    ///
+    /// `CGPreflightPostEventAccess()` rather than `AXIsProcessTrusted()`: they
+    /// read the same TCC service, but the trust check can report `true` from a
+    /// stale entry — one granted to a previous build of an ad-hoc signed app,
+    /// whose signature changed on the next rebuild. In that state `AXIsProcessTrusted`
+    /// says yes and every posted event is silently dropped. The CG preflight
+    /// tracks what actually governs posting.
+    public static var canPostEvents: Bool {
+        CGPreflightPostEventAccess()
+    }
+
+    /// Ask for permission to post events, prompting on first call.
+    @discardableResult
+    public static func requestEventPosting() -> Bool {
+        CGRequestPostEventAccess()
+    }
+
     /// Paste `text` at the cursor in the frontmost application.
+    ///
+    /// The text is left on the clipboard when the paste cannot be confirmed, so
+    /// a failure never loses a transcript — ⌘V still works.
     public static func insert(_ text: String) throws {
         guard !text.isEmpty else { return }
-        guard Permissions.isGranted(.accessibility) else {
+
+        // Checked before the clipboard is touched. An earlier version clobbered
+        // the clipboard first, posted a ⌘V that was silently dropped, and then
+        // restored the previous contents 300 ms later — destroying the
+        // transcript entirely and leaving no trace of what went wrong.
+        guard canPostEvents else {
+            copyToClipboard(text)
             throw TextInjectionError.accessibilityNotGranted
         }
 
@@ -62,7 +89,13 @@ public enum TextInjector {
         pasteboard.setString(text, forType: .string)
         let ourChangeCount = pasteboard.changeCount
 
-        try postCommandKey(kVK_ANSI_V)
+        do {
+            try postCommandKey(kVK_ANSI_V)
+        } catch {
+            // The transcript stays on the clipboard rather than being rolled
+            // back: recovering it with ⌘V beats losing it.
+            throw error
+        }
 
         Task {
             try? await Task.sleep(for: restoreDelay)
@@ -70,6 +103,10 @@ public enum TextInjector {
             // wins — silently overwriting it would be worse than leaving the
             // transcript behind.
             guard pasteboard.changeCount == ourChangeCount else { return }
+            // Re-check: losing posting rights between the ⌘V and the restore
+            // means the paste never landed, and restoring would throw the
+            // transcript away.
+            guard canPostEvents else { return }
             restore(snapshot, to: pasteboard)
         }
 
@@ -87,7 +124,7 @@ public enum TextInjector {
     ///
     /// - Returns: The selected text, or `nil` when nothing is selected.
     public static func readSelection() async throws -> String? {
-        guard Permissions.isGranted(.accessibility) else {
+        guard canPostEvents else {
             throw TextInjectionError.accessibilityNotGranted
         }
 

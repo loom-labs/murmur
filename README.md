@@ -92,6 +92,31 @@ needs it:
 | Accessibility | Pasting text at your cursor, reading your selection | → Accessibility |
 | Screen Recording | Screenshot-to-speech | → Screen Recording |
 
+If Accessibility is off, Hugo still transcribes — the text goes to your
+clipboard instead of being pasted, and the menu bar says so. You never lose a
+transcript because a permission is missing.
+
+### "I already granted Accessibility and it keeps asking"
+
+macOS ties that grant to the app's **code signature**. Release builds are
+ad-hoc signed, which means the signature is a hash of the binary — so a
+different build of Hugo is, as far as macOS is concerned, a different app.
+Upgrading to a new version invalidates the previous grant.
+
+Remove the stale entry and add the new one:
+
+1. System Settings → Privacy & Security → Accessibility
+2. Select Hugo, press **−**, then **+** and pick `/Applications/Hugo.app`
+
+If you build from source and hit this on every rebuild, create a stable signing
+identity once:
+
+```bash
+./Scripts/make-signing-identity.sh && ./Scripts/build-app.sh --sign "Hugo Dev"
+```
+
+The grant then survives rebuilds.
+
 ## Development
 
 ```bash

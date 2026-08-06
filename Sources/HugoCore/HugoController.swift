@@ -165,7 +165,10 @@ public final class HugoController {
             }
 
             lastTranscript = transcript.text
-            try deliver(transcript.text)
+            if let problem = deliver(transcript.text) {
+                fail(problem)
+                return
+            }
             activity = .idle
             Log.app.info(
                 "Dictation delivered at \(String(format: "%.0f", transcript.realtimeFactor), privacy: .public)x realtime"
@@ -192,12 +195,25 @@ public final class HugoController {
     }
 
     /// Route a finished transcript to wherever the user asked for it.
-    private func deliver(_ text: String) throws {
+    ///
+    /// A paste that cannot be delivered falls back to the clipboard rather than
+    /// failing outright. Losing a transcript the user just spoke is the worst
+    /// outcome available, so the text always ends up somewhere recoverable.
+    private func deliver(_ text: String) -> String? {
         switch settings.transcriptDelivery {
         case .paste:
-            try TextInjector.insert(text)
+            do {
+                try TextInjector.insert(text)
+                return nil
+            } catch {
+                // `insert` leaves the text on the clipboard on every failure
+                // path, so there is nothing to recover here — only to explain.
+                Log.app.error("Paste failed: \(error.localizedDescription, privacy: .public)")
+                return error.localizedDescription
+            }
         case .clipboard:
             TextInjector.copyToClipboard(text)
+            return nil
         }
     }
 

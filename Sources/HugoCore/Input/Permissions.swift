@@ -61,7 +61,11 @@ public enum Permissions {
         case .microphone:
             return AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
         case .accessibility:
-            return AXIsProcessTrusted()
+            // Both `AXIsProcessTrusted()` and this read the same TCC service,
+            // but the CG preflight is what actually governs posting events —
+            // and it does not report `true` from a stale grant left behind by a
+            // previous build of an ad-hoc signed app.
+            return CGPreflightPostEventAccess()
         case .screenRecording:
             return CGPreflightScreenCaptureAccess()
         }
@@ -82,7 +86,7 @@ public enum Permissions {
             return await AudioRecorder.requestPermission()
 
         case .accessibility:
-            guard !AXIsProcessTrusted() else { return true }
+            guard !CGPreflightPostEventAccess() else { return true }
             // Passing the prompt option opens System Settings for the user.
             // The key is spelled out rather than read from
             // `kAXTrustedCheckOptionPrompt`: that symbol is an unannotated
