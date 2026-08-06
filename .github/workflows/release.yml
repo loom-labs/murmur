@@ -1,0 +1,76 @@
+name: Release
+
+# Runs after a pull request squash-merges into main. The `#major`/`#minor`/
+# `#patch` tag in the PR title — which becomes the merge commit subject —
+# decides the bump. A commit with no bump tag merges without cutting a release,
+# which is the right outcome for internal-only changes.
+on:
+  push:
+    branches: [main]
+
+# Never cut two releases at once: both would compute the same next version from
+# the same latest tag, and the second would fail on a duplicate tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Tags are the source of truth for the current version, and the
+          # default shallow checkout does not include them.
+          fetch-depth: 0
+
+      - name: Resolve next version
+        id: version
+        run: |
+          message="$(git log -1 --pretty=%s)"
+          echo "Merge commit: ${message}"
+
+          if next="$(Scripts/next-version.sh "${message}")"; then
+            echo "next=${next}" >> "$GITHUB_OUTPUT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "Releasing v${next}"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "No bump tag in the commit subject — skipping release."
+          fi
+
+      # Keyed on the repository for the same reason as ci.yml: `.build` stores
+      # absolute paths, so a cache from a differently-named checkout poisons the
+      # module cache.
+      - name: Cache SwiftPM
+        if: steps.version.outputs.release == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            ~/.cache/org.swift.swiftpm
+          key: spm-${{ runner.os }}-${{ github.repository }}-${{ hashFiles('Package.resolved') }}
+          restore-keys: spm-${{ runner.os }}-${{ github.repository }}-
+
+      - name: Build DMG
+        if: steps.version.outputs.release == 'true'
+        run: Scripts/make-dmg.sh --version "${{ steps.version.outputs.next }}"
+
+      - name: Publish release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          # `gh release create` creates the tag itself at --target, so nothing
+          # needs pushing to the protected main branch. --generate-notes works
+          # out the previous tag on its own, including when there isn't one.
+          gh release create "v${VERSION}" \
+            "dist/Beagle-${VERSION}-arm64.dmg" \
+            --title "Beagle ${VERSION}" \
+            --generate-notes \
+            --target "${GITHUB_SHA}"
