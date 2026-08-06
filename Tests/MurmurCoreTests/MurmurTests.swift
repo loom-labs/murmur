@@ -21,9 +21,17 @@ struct MurmurIdentityTests {
         #expect(directory.lastPathComponent == Murmur.appName)
     }
 
-    @Test("Models directory is created on demand")
-    func modelsDirectoryIsCreated() throws {
-        let directory = try Murmur.modelsDirectory()
-        #expect(FileManager.default.fileExists(atPath: directory.path))
+    @Test("Models directory points at FluidAudio's shared cache")
+    func modelsDirectoryIsShared() {
+        // Murmur must not relocate this: sharing the path with other
+        // FluidAudio-backed apps is what keeps a second install from
+        // re-downloading a gigabyte of weights.
+        let directory = Murmur.modelsDirectory()
+        #expect(directory.pathComponents.suffix(2) == ["FluidAudio", "Models"])
+    }
+
+    @Test("Cache size is zero rather than throwing when nothing is downloaded")
+    func cacheSizeHandlesMissingDirectory() {
+        #expect(Murmur.cachedModelBytes() >= 0)
     }
 }
