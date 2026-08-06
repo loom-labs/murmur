@@ -41,8 +41,9 @@ something that spins your fans.
 
 Both run through [FluidAudio](https://github.com/FluidInference/FluidAudio), an
 Apache-2.0 Swift SDK that ships Core ML conversions of both models. Weights are
-downloaded once on first launch and cached in `~/.cache/fluidaudio/Models`,
-shared with any other FluidAudio-based app you already run.
+downloaded once on first use and cached in
+`~/Library/Application Support/FluidAudio/Models`, shared with any other
+FluidAudio-based app you already run.
 
 ## Requirements
 
