@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Assemble Hugo.app from a SwiftPM release build.
+# Assemble Beagle.app from a SwiftPM release build.
 #
 # Deliberately does not use xcodebuild: the whole package builds with the
 # Command Line Tools toolchain, so contributors and CI do not need a full Xcode
@@ -11,7 +11,7 @@
 #   Scripts/build-app.sh [--output DIR] [--sign IDENTITY]
 #
 # Options:
-#   --output DIR     Where to write Hugo.app (default: dist)
+#   --output DIR     Where to write Beagle.app (default: dist)
 #   --sign IDENTITY  codesign identity. Defaults to ad-hoc ("-").
 #
 set -euo pipefail
@@ -19,8 +19,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly REPO_ROOT
 
-readonly APP_NAME="Hugo"
-readonly BUNDLE_ID="ai.loomlabs.hugo"
+readonly APP_NAME="Beagle"
+readonly BUNDLE_ID="ai.loomlabs.beagle"
 readonly MINIMUM_MACOS="14.0"
 
 output_dir="${REPO_ROOT}/dist"
@@ -73,7 +73,7 @@ mkdir -p "${contents}/MacOS" "${contents}/Resources"
 
 cp "${binary_path}" "${contents}/MacOS/${APP_NAME}"
 
-# LSUIElement keeps Hugo out of the Dock and the ⌘-Tab switcher: it is a
+# LSUIElement keeps Beagle out of the Dock and the ⌘-Tab switcher: it is a
 # background utility, and a Dock tile would imply a main window it does not have.
 #
 # The usage description strings are not optional decoration — macOS kills the
@@ -114,9 +114,9 @@ cat >"${contents}/Info.plist" <<PLIST
     <key>NSSupportsSuddenTermination</key>
     <false/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Hugo transcribes your speech on this Mac. Audio is never sent anywhere.</string>
+    <string>Beagle transcribes your speech on this Mac. Audio is never sent anywhere.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Hugo recognises speech locally using its own models.</string>
+    <string>Beagle recognises speech locally using its own models.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Licensed under the Apache License 2.0.</string>
 </dict>
@@ -128,6 +128,15 @@ if [[ -f "${REPO_ROOT}/Resources/AppIcon.icns" ]]; then
 fi
 
 printf 'APPL????' >"${contents}/PkgInfo"
+
+# Prefer a stable local identity over ad-hoc when one exists. An ad-hoc
+# signature is a hash of the binary, so it changes on every rebuild and macOS
+# treats each build as a new app — silently dropping the Accessibility grant.
+# See Scripts/make-signing-identity.sh.
+if [[ "${sign_identity}" == "-" ]] && security find-identity -v -p codesigning 2>/dev/null | grep -q "Beagle Dev"; then
+    sign_identity="Beagle Dev"
+    echo "==> Found a stable signing identity; using it so permissions survive rebuilds"
+fi
 
 echo "==> Signing (identity: ${sign_identity})"
 # Ad-hoc by default. A real Developer ID identity produces a signature stable

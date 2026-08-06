@@ -6,8 +6,10 @@
 // of shapes, and generating it means a change to the mark is a readable diff
 // instead of an opaque binary blob.
 //
-// The mark is Hugo himself — a beagle, drawn flat and wide-eyed so the
-// silhouette still reads at 16 points where any more detail turns to mud.
+// The mark is Hugo: tricolour head, white blaze, floppy ears, and the red
+// thread he wears. Drawn flat, with a brow ridge and almond eyes rather than
+// saucer eyes, so he reads as a grown dog and not a cartoon puppy — and so the
+// silhouette still holds at 16 points, where any more detail turns to mud.
 //
 // Usage:
 //   swift Scripts/make-icon.swift [output.icns]
@@ -34,15 +36,6 @@ func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1) -> CGColo
     CGColor(red: r / 255, green: g / 255, blue: b / 255, alpha: a)
 }
 
-/// Draw an ellipse rotated about its own centre.
-func addRotatedEllipse(_ ctx: CGContext, center: CGPoint, size: CGSize, degrees: CGFloat) {
-    ctx.saveGState()
-    ctx.translateBy(x: center.x, y: center.y)
-    ctx.rotate(by: degrees * .pi / 180)
-    ctx.addEllipse(in: CGRect(x: -size.width / 2, y: -size.height / 2, width: size.width, height: size.height))
-    ctx.restoreGState()
-}
-
 func fillRotatedEllipse(_ ctx: CGContext, center: CGPoint, size: CGSize, degrees: CGFloat, color fill: CGColor) {
     ctx.saveGState()
     ctx.translateBy(x: center.x, y: center.y)
@@ -61,123 +54,123 @@ func drawIcon(size: Int) -> CGImage? {
     ctx.setShouldAntialias(true)
     ctx.interpolationQuality = .high
 
-    // Squircle background
     let inset = d * 0.06
     let rect = CGRect(x: inset, y: inset, width: d - inset * 2, height: d - inset * 2)
     let radius = rect.width * 0.225
+
     ctx.saveGState()
     ctx.addPath(CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil))
     ctx.clip()
+
+    // Blue. Warm tan against cool blue is the strongest contrast available for
+    // a tricolour dog, and it keeps the mark readable at menu-bar sizes.
     if let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                             colors: [color(126, 200, 227), color(72, 146, 199)] as CFArray,
+                             colors: [color(126, 200, 227), color(64, 134, 190)] as CFArray,
                              locations: [0, 1]) {
         ctx.drawLinearGradient(grad, start: CGPoint(x: 0, y: rect.maxY), end: CGPoint(x: 0, y: rect.minY), options: [])
     }
-    ctx.restoreGState()
 
-    // Geometry anchored to the squircle
-    let cx = rect.midX
-    let cy = rect.midY
     let w = rect.width
+    let cream = color(255, 252, 247)
+    let tan = color(186, 118, 58)
+    let tanDark = color(150, 90, 42)
+    let ink = color(48, 34, 28)
+    let thread = color(207, 46, 46)
 
-    let headW = w * 0.60
-    let headH = w * 0.56
-    let headC = CGPoint(x: cx, y: cy + w * 0.045)
+    let headW = w * 0.615
+    let headH = w * 0.585
+    let headC = CGPoint(x: rect.midX, y: rect.midY + w * 0.045)
 
-    let brown = color(150, 92, 46)
-    let brownDark = color(118, 70, 34)
-    let cream = color(255, 250, 243)
+    // Red thread, just under the chin. There is no torso in the mark — the
+    // face is the whole of it — so the thread sits at the base of the head
+    // rather than on a neck.
+    ctx.setStrokeColor(thread)
+    ctx.setLineWidth(max(1.6, w * 0.030))
+    ctx.setLineCap(.round)
+    let threadY = headC.y - headH * 0.605
+    ctx.move(to: CGPoint(x: rect.midX - headW * 0.36, y: threadY + w * 0.036))
+    ctx.addQuadCurve(to: CGPoint(x: rect.midX + headW * 0.36, y: threadY + w * 0.036),
+                     control: CGPoint(x: rect.midX, y: threadY - w * 0.070))
+    ctx.strokePath()
 
-    // Ears — drawn first so they sit behind the head
-    let earSize = CGSize(width: w * 0.215, height: w * 0.46)
-    let earDX = headW * 0.455
-    let earY = headC.y - w * 0.115
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX, y: earY),
-                       size: earSize, degrees: 20, color: brown)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX, y: earY),
-                       size: earSize, degrees: -20, color: brown)
-    // Inner shading, offset down the ear so it reads as depth not a stripe
-    let earInner = CGSize(width: earSize.width * 0.52, height: earSize.height * 0.66)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX - w * 0.012, y: earY - w * 0.035),
-                       size: earInner, degrees: 20, color: brownDark)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX + w * 0.012, y: earY - w * 0.035),
-                       size: earInner, degrees: -20, color: brownDark)
+    // Ears, behind the head
+    let earSize = CGSize(width: w * 0.275, height: w * 0.60)
+    let earDX = headW * 0.505
+    let earY = headC.y - w * 0.135
+    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX, y: earY), size: earSize, degrees: 17, color: tan)
+    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX, y: earY), size: earSize, degrees: -17, color: tan)
+    let earInner = CGSize(width: earSize.width * 0.54, height: earSize.height * 0.68)
+    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX - w * 0.010, y: earY - w * 0.030),
+                       size: earInner, degrees: 17, color: tanDark)
+    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX + w * 0.010, y: earY - w * 0.030),
+                       size: earInner, degrees: -17, color: tanDark)
 
     // Head
-    ctx.setFillColor(cream)
+    ctx.setFillColor(tan)
     ctx.fillEllipse(in: CGRect(x: headC.x - headW / 2, y: headC.y - headH / 2, width: headW, height: headH))
 
-    // Brown cap over the top of the head
+    // White blaze down the centre of the face, into the muzzle
     ctx.saveGState()
     ctx.addEllipse(in: CGRect(x: headC.x - headW / 2, y: headC.y - headH / 2, width: headW, height: headH))
     ctx.clip()
-    ctx.setFillColor(brown)
-    // Ellipse rather than a rectangle so the marking's lower edge follows a
-    // curve, the way a beagle's cap actually sits.
-    ctx.fillEllipse(in: CGRect(x: headC.x - headW * 0.56, y: headC.y - headH * 0.10,
-                               width: headW * 1.12, height: headH * 0.95))
+    ctx.setFillColor(cream)
+    let blazeW = headW * 0.225
+    ctx.fillEllipse(in: CGRect(x: headC.x - blazeW / 2, y: headC.y - headH * 0.30,
+                               width: blazeW, height: headH * 0.86))
+    // Muzzle
+    ctx.fillEllipse(in: CGRect(x: headC.x - headW * 0.335, y: headC.y - headH * 0.70,
+                               width: headW * 0.67, height: headH * 0.66))
     ctx.restoreGState()
 
-    // Head outline for definition at small sizes
-    ctx.setStrokeColor(color(96, 56, 28, 0.35))
-    ctx.setLineWidth(max(1, w * 0.010))
-    ctx.strokeEllipse(in: CGRect(x: headC.x - headW / 2, y: headC.y - headH / 2, width: headW, height: headH))
-
-    // Eyes
-    let eyeDX = headW * 0.225
-    let eyeY = headC.y + headH * 0.045
+    // Eyes, either side of the blaze
+    let eyeDX = headW * 0.245
+    let eyeY = headC.y + headH * 0.075
     let eyeW = headW * 0.175
-    let eyeH = headH * 0.225
+    let eyeH = headH * 0.150
     for sign in [CGFloat(-1), 1] {
         let ec = CGPoint(x: headC.x + sign * eyeDX, y: eyeY)
-        ctx.setFillColor(color(28, 22, 20))
+        ctx.setFillColor(ink)
         ctx.fillEllipse(in: CGRect(x: ec.x - eyeW / 2, y: ec.y - eyeH / 2, width: eyeW, height: eyeH))
-        // anime highlights
-        ctx.setFillColor(color(255, 255, 255, 0.95))
-        let hl = eyeW * 0.36
-        ctx.fillEllipse(in: CGRect(x: ec.x - eyeW * 0.06, y: ec.y + eyeH * 0.10, width: hl, height: hl))
-        let hl2 = eyeW * 0.20
-        ctx.fillEllipse(in: CGRect(x: ec.x - eyeW * 0.34, y: ec.y - eyeH * 0.24, width: hl2, height: hl2))
+        // One restrained catchlight. Two big ones read as a cartoon puppy.
+        ctx.setFillColor(color(255, 255, 255, 0.85))
+        let hl = eyeW * 0.24
+        ctx.fillEllipse(in: CGRect(x: ec.x + eyeW * 0.06, y: ec.y + eyeH * 0.10, width: hl, height: hl))
+
+        // Brow ridge above each eye — where Hugo's expression actually lives.
+        ctx.setStrokeColor(color(126, 74, 34, 0.75))
+        ctx.setLineWidth(max(1, w * 0.016))
+        ctx.setLineCap(.round)
+        ctx.move(to: CGPoint(x: ec.x - eyeW * 0.62, y: ec.y + eyeH * 0.95))
+        ctx.addQuadCurve(to: CGPoint(x: ec.x + eyeW * 0.62, y: ec.y + eyeH * 0.80),
+                         control: CGPoint(x: ec.x, y: ec.y + eyeH * 1.45))
+        ctx.strokePath()
     }
 
-    // Muzzle
-    let muzW = headW * 0.52
-    let muzH = headH * 0.36
-    let muzC = CGPoint(x: headC.x, y: headC.y - headH * 0.26)
-    ctx.setFillColor(cream)
-    ctx.fillEllipse(in: CGRect(x: muzC.x - muzW / 2, y: muzC.y - muzH / 2, width: muzW, height: muzH))
-
     // Nose
-    let noseW = headW * 0.20
-    let noseH = headH * 0.135
-    let noseC = CGPoint(x: headC.x, y: muzC.y + muzH * 0.30)
-    ctx.setFillColor(color(30, 24, 22))
+    let noseW = headW * 0.235
+    let noseH = headH * 0.140
+    let noseC = CGPoint(x: headC.x, y: headC.y - headH * 0.325)
+    ctx.setFillColor(ink)
     ctx.fillEllipse(in: CGRect(x: noseC.x - noseW / 2, y: noseC.y - noseH / 2, width: noseW, height: noseH))
 
-    // Smile: two quad curves rather than arcs, which are far easier to aim.
-    ctx.setStrokeColor(color(60, 44, 36))
-    ctx.setLineWidth(max(1, w * 0.018))
-    ctx.setLineCap(.round)
+    // Smile
+    ctx.setStrokeColor(color(72, 52, 42))
+    ctx.setLineWidth(max(1, w * 0.017))
     ctx.setLineJoin(.round)
-
-    let mouthTop = noseC.y - noseH * 0.55
-    let mouthDrop = headH * 0.070
-    ctx.move(to: CGPoint(x: noseC.x, y: mouthTop))
-    ctx.addLine(to: CGPoint(x: noseC.x, y: mouthTop - mouthDrop))
+    let jaw = noseC.y - noseH * 0.55 - headH * 0.055
+    ctx.move(to: CGPoint(x: noseC.x, y: noseC.y - noseH * 0.55))
+    ctx.addLine(to: CGPoint(x: noseC.x, y: jaw))
     ctx.strokePath()
+    let lobe = headW * 0.130
+    let depth = headH * 0.040
+    for sign in [CGFloat(-1), 1] {
+        ctx.move(to: CGPoint(x: noseC.x, y: jaw))
+        ctx.addQuadCurve(to: CGPoint(x: noseC.x + sign * lobe * 1.6, y: jaw + depth * 0.35),
+                         control: CGPoint(x: noseC.x + sign * lobe, y: jaw - depth))
+        ctx.strokePath()
+    }
 
-    let lobe = headW * 0.125
-    let lobeDepth = headH * 0.075
-    let jaw = mouthTop - mouthDrop
-    ctx.move(to: CGPoint(x: noseC.x, y: jaw))
-    ctx.addQuadCurve(to: CGPoint(x: noseC.x - lobe * 1.6, y: jaw + lobeDepth * 0.35),
-                     control: CGPoint(x: noseC.x - lobe, y: jaw - lobeDepth))
-    ctx.strokePath()
-    ctx.move(to: CGPoint(x: noseC.x, y: jaw))
-    ctx.addQuadCurve(to: CGPoint(x: noseC.x + lobe * 1.6, y: jaw + lobeDepth * 0.35),
-                     control: CGPoint(x: noseC.x + lobe, y: jaw - lobeDepth))
-    ctx.strokePath()
-
+    ctx.restoreGState()
     return ctx.makeImage()
 }
 
@@ -191,7 +184,7 @@ let outputPath =
 
 let outputURL = URL(fileURLWithPath: outputPath)
 let iconsetURL = FileManager.default.temporaryDirectory
-    .appendingPathComponent("Hugo-\(UUID().uuidString).iconset")
+    .appendingPathComponent("Beagle-\(UUID().uuidString).iconset")
 
 do {
     try FileManager.default.createDirectory(at: iconsetURL, withIntermediateDirectories: true)

@@ -16,11 +16,11 @@
 #
 # Usage:
 #   Scripts/make-signing-identity.sh          # create it if missing
-#   Scripts/build-app.sh --sign "Hugo Dev"    # then build with it
+#   Scripts/build-app.sh --sign "Beagle Dev"    # then build with it
 #
 set -euo pipefail
 
-readonly IDENTITY_NAME="${1:-Hugo Dev}"
+readonly IDENTITY_NAME="${1:-Beagle Dev}"
 readonly KEYCHAIN="${HOME}/Library/Keychains/login.keychain-db"
 
 if security find-certificate -c "${IDENTITY_NAME}" "${KEYCHAIN}" >/dev/null 2>&1; then

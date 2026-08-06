@@ -1,12 +1,12 @@
 name: Feature request
-description: Suggest a capability for Hugo
+description: Suggest a capability for Beagle
 labels: [enhancement]
 body:
   - type: textarea
     id: problem
     attributes:
       label: The problem
-      description: What are you trying to do that Hugo makes hard today?
+      description: What are you trying to do that Beagle makes hard today?
     validations:
       required: true
 

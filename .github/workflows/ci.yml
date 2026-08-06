@@ -39,7 +39,7 @@ jobs:
       #
       # The repository name is part of the key because `.build` stores absolute
       # paths: a cache saved under `work/murmur/murmur` restored into
-      # `work/hugo/hugo` makes clang reject every precompiled header with
+      # `work/beagle/beagle` makes clang reject every precompiled header with
       # "PCH was compiled with module cache path ...". Renaming the repo broke
       # exactly this, so the key has to change with the checkout path.
       - name: Cache SwiftPM

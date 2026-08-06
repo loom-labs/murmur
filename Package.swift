@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "Hugo",
+    name: "Beagle",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Hugo", targets: ["HugoApp"]),
-        .library(name: "HugoCore", targets: ["HugoCore"]),
+        .executable(name: "Beagle", targets: ["BeagleApp"]),
+        .library(name: "BeagleCore", targets: ["BeagleCore"]),
     ],
     dependencies: [
         .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.15.5")
@@ -16,24 +16,24 @@ let package = Package(
     targets: [
         // Domain layer: audio, speech engines, settings. No UI, no AppKit chrome.
         .target(
-            name: "HugoCore",
+            name: "BeagleCore",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio")
             ]
         ),
         // Presentation layer: SwiftUI views and view models.
         .target(
-            name: "HugoUI",
-            dependencies: ["HugoCore"]
+            name: "BeagleUI",
+            dependencies: ["BeagleCore"]
         ),
         // Application shell: lifecycle, hotkeys, windows.
         .executableTarget(
-            name: "HugoApp",
-            dependencies: ["HugoCore", "HugoUI"]
+            name: "BeagleApp",
+            dependencies: ["BeagleCore", "BeagleUI"]
         ),
         .testTarget(
-            name: "HugoCoreTests",
-            dependencies: ["HugoCore"]
+            name: "BeagleCoreTests",
+            dependencies: ["BeagleCore"]
         ),
     ]
 )
