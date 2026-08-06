@@ -58,7 +58,8 @@ downloaded once on first use and cached in
 `~/Library/Application Support/FluidAudio/Models`, shared with any other
 FluidAudio-based app you already run.
 
-**Website:** [loom-labs.github.io/beagle](https://loom-labs.github.io/beagle)
+**Website:** [loom-labs.github.io/beagle](https://loom-labs.github.io/beagle) ·
+**Download:** [latest release](https://github.com/loom-labs/beagle/releases/latest)
 
 ## Requirements
 
