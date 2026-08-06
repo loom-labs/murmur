@@ -30,9 +30,9 @@ Drop text on the orb, and your Mac reads it back. Nothing leaves the machine.
 
 | Action | Shortcut |
 |---|---|
-| Dictate — hold to talk, or press to toggle | ⇧⌘L |
-| Speak the current selection (press again to stop) | ⇧⌘S |
-| Capture a screen region and read it aloud | ⇧⌘R |
+| Dictate — hold to talk, or press to toggle | ⌃⌥L |
+| Speak the current selection (press again to stop) | ⌃⌥K |
+| Capture a screen region and read it aloud | ⌃⌥J |
 
 You can also drop text or a `.txt`/`.md` file onto the orb to hear it, or click
 the orb to start dictating.
