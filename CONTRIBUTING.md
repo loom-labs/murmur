@@ -46,8 +46,13 @@ fix: release the audio engine when dictation is cancelled #patch
 
 Hugo is versioned with semver, and releases are cut automatically. The
 `#major` / `#minor` / `#patch` tag in the **pull request title** decides the
-bump — when the PR squash-merges to `main`, CI reads that tag, bumps
-[`VERSION`](VERSION), tags the commit, builds the DMG, and publishes a release.
+bump — when the PR squash-merges to `main`, CI reads that tag, works out the
+next version from the latest `vX.Y.Z` git tag, builds the DMG, and publishes a
+release.
+
+Git tags are the only source of truth for the version; there is no `VERSION`
+file to keep in sync. `main` is protected, so a release job could not push one
+back to it anyway.
 
 | Tag | Use for |
 |---|---|
