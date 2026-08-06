@@ -67,15 +67,23 @@ openssl pkcs12 -export \
 echo "==> Importing into the login keychain"
 echo "    macOS will ask for your password, and again to trust the certificate."
 
-# -T codesign pre-authorizes codesign to use the key without a prompt per build.
+# -T codesign pre-authorizes codesign to use the key, so builds do not each
+# stop on a keychain dialog.
 security import "${workdir}/identity.p12" \
     -k "${KEYCHAIN}" \
     -P "" \
     -T /usr/bin/codesign
 
-# Without this the first codesign invocation blocks on a keychain dialog.
-security set-key-partition-list -S apple-tool:,apple:,codesign: \
-    -s -k "" "${KEYCHAIN}" >/dev/null 2>&1 || true
+# Authorize codesign against the imported key. `-k` is deliberately omitted so
+# macOS prompts for the login keychain password: an earlier version passed
+# `-k ""`, which assumed an empty keychain password, silently failed on every
+# real account, and left codesign stopping on a dialog at each build instead.
+echo
+echo "==> macOS will now ask for your login password to authorize codesign."
+if ! security set-key-partition-list -S apple-tool:,apple:,codesign: \
+    -s "${KEYCHAIN}" >/dev/null 2>&1; then
+    echo "    Skipped — codesign may prompt on first use. Choose \"Always Allow\"."
+fi
 
 echo
 echo "Created '${IDENTITY_NAME}'."

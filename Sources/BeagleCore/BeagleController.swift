@@ -211,6 +211,12 @@ public final class BeagleController {
                 // `insert` leaves the text on the clipboard on every failure
                 // path, so there is nothing to recover here — only to explain.
                 Log.app.error("Paste failed: \(error.localizedDescription, privacy: .public)")
+                // Spelled out rather than left as "Accessibility is off": the
+                // fix is not obvious, and the same message on every dictation
+                // without a route to resolving it is just noise.
+                if case TextInjectionError.accessibilityNotGranted = error {
+                    return "Copied instead — grant Accessibility to paste automatically."
+                }
                 return error.localizedDescription
             }
         case .clipboard:
