@@ -107,6 +107,18 @@ Beyond formatting:
   to hear about.
 - Files stay under ~400 lines; functions under ~50.
 
+## What review looks like
+
+`main` is protected: pull requests only, linear history, CI green, no force
+pushes. Changes under `.github/`, `Scripts/`, `Package.swift`, and the input and
+vision code additionally require a maintainer review — those are the paths where
+a hostile change is hardest to spot and does the most damage.
+
+Workflow runs on pull requests from forks need maintainer approval before they
+execute, and only GitHub-owned actions are permitted to run at all. If your
+change needs a third-party action, say so in the pull request rather than adding
+it — it will not run otherwise.
+
 ## Reporting bugs
 
 Open an issue with your macOS version, chip, and — if it is a crash or a hang —

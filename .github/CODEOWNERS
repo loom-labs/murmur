@@ -1,0 +1,18 @@
+# Every pull request needs a maintainer review on these paths, no matter who
+# opens it. They are the files where a malicious change is least visible and
+# most damaging.
+
+# Anything that runs in CI, or that CI runs.
+/.github/            @Saharsh1005
+/Scripts/            @Saharsh1005
+
+# Supply chain: a dependency swap or an unpinned revision.
+/Package.swift       @Saharsh1005
+/Package.resolved    @Saharsh1005
+
+# The code that holds permissions, moves text between apps, and touches the
+# clipboard and the screen.
+/Sources/BeagleCore/Input/   @Saharsh1005
+/Sources/BeagleCore/Vision/  @Saharsh1005
+
+/SECURITY.md         @Saharsh1005
