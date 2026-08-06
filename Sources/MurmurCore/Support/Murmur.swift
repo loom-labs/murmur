@@ -15,9 +15,11 @@ public enum Murmur {
     /// different application on every launch.
     public static let bundleIdentifier = "ai.loomlabs.murmur"
 
-    /// Semantic version, injected at build time from the repository `VERSION`
-    /// file via `-DMURMUR_VERSION`. Falls back to `0.0.0-dev` for plain
-    /// `swift build` / `swift test` invocations.
+    /// Semantic version, read from the bundle's `CFBundleShortVersionString`.
+    ///
+    /// `Scripts/build-app.sh` stamps that key from the latest `vX.Y.Z` git tag.
+    /// Plain `swift build` / `swift test` runs have no bundle, so they report
+    /// `0.0.0-dev`.
     public static var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
             ?? "0.0.0-dev"

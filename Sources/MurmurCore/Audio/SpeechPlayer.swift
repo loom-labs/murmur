@@ -127,10 +127,16 @@ public final class SpeechPlayer {
 
     private func bufferFinished() {
         pendingBuffers = max(0, pendingBuffers - 1)
-        // Only the *last* buffer draining means the utterance is over. A paused
-        // player still reports completions for already-rendered audio, so pause
-        // must not be mistaken for the end.
-        guard pendingBuffers == 0, state == .playing else { return }
+
+        // Only the *last* buffer draining means the utterance is over.
+        guard pendingBuffers == 0 else { return }
+
+        // Deliberately not conditioned on `state == .playing`. A paused player
+        // still reports completions for audio the renderer had already consumed,
+        // so gating on `.playing` could leave the queue empty, the engine
+        // running, and the state stuck at `.paused` — where `resume()` would
+        // play silence forever and `stop()` was the only way out.
+        guard state != .idle else { return }
         player.stop()
         teardownEngine()
         state = .idle

@@ -7,6 +7,7 @@ public enum AudioRecorderError: LocalizedError {
     case microphonePermissionDenied
     case engineFailedToStart(underlying: any Error)
     case noAudioCaptured
+    case notRecording
 
     public var errorDescription: String? {
         switch self {
@@ -16,6 +17,8 @@ public enum AudioRecorderError: LocalizedError {
             return "The audio engine could not start: \(underlying.localizedDescription)"
         case .noAudioCaptured:
             return "No audio was captured."
+        case .notRecording:
+            return "Nothing was being recorded."
         }
     }
 }
@@ -75,11 +78,7 @@ public final class AudioRecorder {
         let sampleBuffer = AudioSampleBuffer(capacity: capacity)
         buffer = sampleBuffer
 
-        // 4096 frames is ~85 ms at 48 kHz: large enough that the tap overhead is
-        // negligible, small enough that stopping feels instant.
-        input.installTap(onBus: 0, bufferSize: 4096, format: format) { pcmBuffer, _ in
-            Self.appendDownmixed(pcmBuffer, to: sampleBuffer)
-        }
+        Self.installTap(on: input, format: format, into: sampleBuffer)
 
         engine.prepare()
         do {
@@ -97,7 +96,10 @@ public final class AudioRecorder {
     /// Stop capturing and return the utterance as 16 kHz mono samples.
     @discardableResult
     public func stop() throws -> [Float] {
-        guard isRecording, let buffer else { return [] }
+        // Throwing rather than returning an empty array: a caller that stops
+        // without having started has a bug, and silently handing back `[]` makes
+        // it indistinguishable from a recording that captured nothing.
+        guard isRecording, let buffer else { throw AudioRecorderError.notRecording }
 
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
@@ -132,33 +134,23 @@ public final class AudioRecorder {
         return Double(buffer.count) / hardwareSampleRate
     }
 
-    /// Downmix an interleaved or planar buffer to mono and append it.
+    /// Install the capture tap.
     ///
-    /// `nonisolated static` so the realtime tap never touches main-actor state.
-    private nonisolated static func appendDownmixed(
-        _ pcmBuffer: AVAudioPCMBuffer,
-        to sampleBuffer: AudioSampleBuffer
+    /// This is `nonisolated static` for a reason that is not cosmetic. A closure
+    /// created inside a `@MainActor` method inherits that isolation, and under
+    /// Swift 6 the compiler emits an executor check at its entry. Core Audio
+    /// invokes the tap on a realtime thread, the check fails, and the process
+    /// dies with `EXC_BREAKPOINT` on the very first buffer. Building the closure
+    /// in a nonisolated context is what keeps it off the main actor.
+    private nonisolated static func installTap(
+        on input: AVAudioInputNode,
+        format: AVAudioFormat,
+        into sampleBuffer: AudioSampleBuffer
     ) {
-        guard let channels = pcmBuffer.floatChannelData else { return }
-        let frameCount = Int(pcmBuffer.frameLength)
-        guard frameCount > 0 else { return }
-
-        let channelCount = Int(pcmBuffer.format.channelCount)
-        if channelCount == 1 {
-            sampleBuffer.append(UnsafeBufferPointer(start: channels[0], count: frameCount))
-            return
+        // 4096 frames is ~85 ms at 48 kHz: large enough that the tap overhead is
+        // negligible, small enough that stopping feels instant.
+        input.installTap(onBus: 0, bufferSize: 4096, format: format) { pcmBuffer, _ in
+            sampleBuffer.appendDownmixed(pcmBuffer)
         }
-
-        // Average across channels. Most Macs deliver mono from the built-in mic,
-        // but external interfaces and aggregate devices are routinely multi-channel.
-        var mono = [Float](repeating: 0, count: frameCount)
-        let scale = 1.0 / Float(channelCount)
-        for channel in 0..<channelCount {
-            let source = channels[channel]
-            for frame in 0..<frameCount {
-                mono[frame] += source[frame] * scale
-            }
-        }
-        mono.withUnsafeBufferPointer { sampleBuffer.append($0) }
     }
 }

@@ -149,12 +149,18 @@ public enum TextChunker {
         guard character == "." else { return true }
 
         // A known abbreviation ("Dr.", "etc.") does not end the sentence.
+        //
+        // Internal periods are stripped as well as trailing ones, so dotted
+        // forms reduce to the undotted spellings held in `abbreviations`:
+        // "e.g." and "i.e." become "eg" and "ie" rather than "e.g" and "i.e",
+        // which matched nothing and let the splitter cut the sentence in half.
         let lastWord =
             current
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .components(separatedBy: .whitespaces)
             .last?
-            .trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?\"')]"))
+            .trimmingCharacters(in: CharacterSet(charactersIn: ",;:!?\"')]"))
+            .replacingOccurrences(of: ".", with: "")
             .lowercased() ?? ""
         if abbreviations.contains(lastWord) { return false }
 

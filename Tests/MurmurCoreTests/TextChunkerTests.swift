@@ -219,4 +219,23 @@ struct TextChunkerTests {
 
         #expect(chunked == original)
     }
+
+    @Test(
+        "Dotted abbreviations do not split even under a tight budget",
+        arguments: [
+            "See the guide, e.g. chapter four, for the details.",
+            "The result, i.e. the transcript, appears at the cursor.",
+        ]
+    )
+    func dottedAbbreviationsDoNotSplit(text: String) {
+        // Regression: the abbreviation lookup used to keep internal periods, so
+        // "e.g." reduced to "e.g" and matched nothing in the table. At a large
+        // budget the packer silently rejoined the pieces and hid the bug; a
+        // tight budget exposes the bad boundary.
+        let chunks = TextChunker.chunk(text, maximumLength: 30)
+        for chunk in chunks {
+            #expect(chunk.hasSuffix("e.g.") == false, "split after e.g. in \(chunks)")
+            #expect(chunk.hasSuffix("i.e.") == false, "split after i.e. in \(chunks)")
+        }
+    }
 }
