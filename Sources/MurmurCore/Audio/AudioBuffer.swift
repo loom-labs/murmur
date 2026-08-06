@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 
 /// A lock-guarded, monotonically growing buffer of mono float samples.
@@ -38,6 +39,47 @@ final class AudioSampleBuffer: @unchecked Sendable {
         } else {
             samples.append(contentsOf: newSamples[0..<room])
             overflowed = true
+        }
+    }
+
+    /// Downmix a captured buffer to mono and append it, allocating nothing.
+    ///
+    /// Called on Core Audio's realtime render thread. An earlier version built a
+    /// temporary `[Float]` per callback to hold the mono mix, which put a heap
+    /// allocation in the realtime path and risked timing spikes on
+    /// multi-channel interfaces. Averaging straight into the reserved storage
+    /// avoids that entirely.
+    func appendDownmixed(_ pcmBuffer: AVAudioPCMBuffer) {
+        guard let channels = pcmBuffer.floatChannelData else { return }
+        let frameCount = Int(pcmBuffer.frameLength)
+        guard frameCount > 0 else { return }
+
+        let channelCount = Int(pcmBuffer.format.channelCount)
+        if channelCount == 1 {
+            append(UnsafeBufferPointer(start: channels[0], count: frameCount))
+            return
+        }
+
+        // Most Macs deliver mono from the built-in mic, but external interfaces
+        // and aggregate devices are routinely multi-channel.
+        lock.lock()
+        defer { lock.unlock() }
+
+        let room = capacity - samples.count
+        guard room > 0 else {
+            overflowed = true
+            return
+        }
+        let frames = min(frameCount, room)
+        if frames < frameCount { overflowed = true }
+
+        let scale = 1.0 / Float(channelCount)
+        for frame in 0..<frames {
+            var sum: Float = 0
+            for channel in 0..<channelCount {
+                sum += channels[channel][frame]
+            }
+            samples.append(sum * scale)
         }
     }
 
