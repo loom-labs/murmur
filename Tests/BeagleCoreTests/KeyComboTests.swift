@@ -17,10 +17,11 @@ struct KeyComboTests {
 
     @Test("Display name pairs modifiers with the key")
     func displayName() {
-        // ⌃⌥ rather than ⇧⌘: the latter collides with common app shortcuts.
+        // ⌃⌥ with letters Rectangle does not claim. It owns U I J K, C D E F G T
+        // and the arrows; L, S and R are clear. See KeyCombo for the reasoning.
         #expect(KeyCombo.dictation.displayName == "⌃⌥L")
-        #expect(KeyCombo.speakSelection.displayName == "⌃⌥K")
-        #expect(KeyCombo.readScreen.displayName == "⌃⌥J")
+        #expect(KeyCombo.speakSelection.displayName == "⌃⌥S")
+        #expect(KeyCombo.readScreen.displayName == "⌃⌥R")
     }
 
     @Test("Special keys render as glyphs, not codes")

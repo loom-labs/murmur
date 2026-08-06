@@ -64,9 +64,19 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Defaults
 
-    // Control-Option rather than Shift-Command. ⇧⌘ combinations collide with a
-    // lot of common application shortcuts; ⌃⌥ is close to unused, so Beagle can
-    // claim it system-wide without taking a key away from anything.
+    // Two modifiers and a letter — three keys. A third modifier would be safer
+    // in the abstract and worse in the hand, and these are pressed constantly.
+    //
+    // The letters are chosen around window managers rather than by adding
+    // modifiers. Rectangle, the most common one, claims ⌃⌥ with U I J K for
+    // quarters, C D E F G T for thirds and centring, the arrows for halves,
+    // and ⌃⌥⌘←/→ for displays — so adding ⌘ would have moved into its
+    // namespace, not out of it. L, S and R are clear of all of it, and happen
+    // to be mnemonic: listen, speak, read.
+    //
+    // macOS cannot report which combinations other applications hold — see
+    // `HotKeyCenter.isAvailable` — so this avoids a known conflict rather than
+    // proving the field is clear. Shortcuts are rebindable for the rest.
     //
     // Fn is deliberately not offered. `RegisterEventHotKey` accepts only
     // ⌘/⇧/⌥/⌃ — Fn is not a Carbon modifier — so an Fn shortcut would require a
@@ -82,13 +92,13 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
     /// Read the current selection aloud.
     public static let speakSelection = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_K),
+        keyCode: UInt32(kVK_ANSI_S),
         modifiers: [.control, .option]
     )
 
     /// Capture a region of the screen and read it aloud.
     public static let readScreen = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_J),
+        keyCode: UInt32(kVK_ANSI_R),
         modifiers: [.control, .option]
     )
 

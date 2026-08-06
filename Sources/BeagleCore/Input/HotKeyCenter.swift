@@ -23,7 +23,7 @@ public final class HotKeyCenter {
     public static let shared = HotKeyCenter()
 
     /// A registered shortcut, keyed by the id handed to Carbon.
-    private struct Registration {
+    struct Registration {
         let combo: KeyCombo
         let reference: EventHotKeyRef
         let handler: (HotKeyEdge) -> Void
@@ -35,9 +35,12 @@ public final class HotKeyCenter {
         return characters.reduce(0) { ($0 << 8) | OSType($1) }
     }()
 
-    private var registrations: [UInt32: Registration] = [:]
+    /// Internal rather than private so tests can verify that suspension keeps
+    /// registrations intact for resume() to reclaim.
+    internal var registrations: [UInt32: Registration] = [:]
     private var nextIdentifier: UInt32 = 1
     private var eventHandler: EventHandlerRef?
+    private var isSuspended = false
 
     private init() {}
 
@@ -102,6 +105,58 @@ public final class HotKeyCenter {
         for identifier in registrations.keys { unregister(identifier) }
     }
 
+    /// Temporarily release Beagle's shortcuts, keeping them so ``resume()`` can
+    /// claim them again.
+    ///
+    /// Required while recording a new shortcut. A Carbon hot key is consumed by
+    /// the system before the owning application sees it as an ordinary key
+    /// event, so any combination Beagle already holds is invisible to the
+    /// recorder's `NSEvent` monitor — you could never rebind one action to a
+    /// key another action currently owns, and the keypress would silently do
+    /// nothing.
+    public func suspend() {
+        guard !isSuspended else { return }
+        for registration in registrations.values {
+            UnregisterEventHotKey(registration.reference)
+        }
+        isSuspended = true
+        Log.app.info("Suspended \(self.registrations.count, privacy: .public) shortcuts")
+    }
+
+    /// Re-claim the shortcuts released by ``suspend()``.
+    public func resume() {
+        guard isSuspended else { return }
+        isSuspended = false
+
+        for (identifier, registration) in registrations {
+            let hotKeyID = EventHotKeyID(signature: Self.signature, id: identifier)
+            var reference: EventHotKeyRef?
+            let status = RegisterEventHotKey(
+                registration.combo.keyCode,
+                registration.combo.modifiers.carbonFlags,
+                hotKeyID,
+                GetEventDispatcherTarget(),
+                0,
+                &reference
+            )
+
+            guard status == noErr, let reference else {
+                Log.app.error(
+                    "Could not reclaim \(registration.combo.displayName, privacy: .public): OSStatus \(status, privacy: .public)"
+                )
+                registrations.removeValue(forKey: identifier)
+                continue
+            }
+
+            registrations[identifier] = Registration(
+                combo: registration.combo,
+                reference: reference,
+                handler: registration.handler
+            )
+        }
+        Log.app.info("Resumed shortcuts")
+    }
+
     /// Whether `combo` can be claimed right now.
     ///
     /// Implemented by trying: there is no API to query ownership, so this
@@ -109,21 +164,7 @@ public final class HotKeyCenter {
     /// before saving a shortcut another app already owns.
     public func isAvailable(_ combo: KeyCombo) -> Bool {
         guard combo.isValid else { return false }
-        guard registrations.values.allSatisfy({ $0.combo != combo }) else { return false }
-
-        let probeID = EventHotKeyID(signature: Self.signature, id: .max)
-        var reference: EventHotKeyRef?
-        let status = RegisterEventHotKey(
-            combo.keyCode,
-            combo.modifiers.carbonFlags,
-            probeID,
-            GetEventDispatcherTarget(),
-            0,
-            &reference
-        )
-        guard status == noErr, let reference else { return false }
-        UnregisterEventHotKey(reference)
-        return true
+        return registrations.values.allSatisfy { $0.combo != combo }
     }
 
     // MARK: - Carbon plumbing
