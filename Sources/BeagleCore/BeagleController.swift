@@ -70,8 +70,20 @@ public final class BeagleController {
     public private(set) var recognitionPhase: ModelPhase = .idle
     public private(set) var synthesisPhase: ModelPhase = .idle
 
+    /// How long the last transcript stays available to "Copy Last Transcript".
+    ///
+    /// Dictated text is as sensitive as anything a user types — it may be a
+    /// password, an address, a medical note. Holding it in memory for the life
+    /// of the process, one menu click from the clipboard, is a liability with
+    /// no matching benefit, so it expires.
+    private static let transcriptRetention: Duration = .seconds(300)
+
     /// The most recent transcript, for the menu bar's "copy last" affordance.
+    /// Cleared automatically after ``transcriptRetention``.
     public private(set) var lastTranscript: String?
+
+    /// Pending expiry for ``lastTranscript``.
+    private var transcriptExpiry: Task<Void, Never>?
 
     /// Text currently being spoken, for caption display.
     public private(set) var spokenText: String?
@@ -108,7 +120,12 @@ public final class BeagleController {
 
         player.onStateChange = { [weak self] state in
             guard let self else { return }
-            if state == .idle, self.activity == .speaking { self.activity = .idle }
+            if state == .idle, self.activity == .speaking {
+                self.activity = .idle
+                // The text being read may be a whole document or a password
+                // read back; there is no reason to keep it once it has played.
+                self.spokenText = nil
+            }
         }
     }
 
@@ -126,6 +143,8 @@ public final class BeagleController {
     /// Release hotkeys. Call at termination.
     public func stop() {
         cancelSpeech()
+        transcriptExpiry?.cancel()
+        lastTranscript = nil
         for token in hotKeyTokens { HotKeyCenter.shared.unregister(token) }
         hotKeyTokens.removeAll()
     }
@@ -172,7 +191,7 @@ public final class BeagleController {
                 return
             }
 
-            lastTranscript = transcript.text
+            rememberTranscript(transcript.text)
             if let problem = deliver(transcript.text) {
                 fail(problem)
                 return
@@ -216,7 +235,11 @@ public final class BeagleController {
             } catch {
                 // `insert` leaves the text on the clipboard on every failure
                 // path, so there is nothing to recover here — only to explain.
-                Log.app.error("Paste failed: \(error.localizedDescription, privacy: .public)")
+                // Deliberately not `.public`. Error descriptions from the
+                // speech and synthesis libraries can embed input-derived
+                // detail, and a `.public` entry is written to the system log,
+                // where it survives the session and is swept up by sysdiagnose.
+                Log.app.error("Paste failed: \(error.localizedDescription, privacy: .private)")
                 // Spelled out rather than left as "Accessibility is off": the
                 // fix is not obvious, and the same message on every dictation
                 // without a route to resolving it is just noise.
@@ -312,6 +335,17 @@ public final class BeagleController {
     /// Whether speech is currently playing, for the orb's stop affordance.
     public var isSpeaking: Bool { player.isActive }
 
+    /// Hold a transcript for a bounded time, then forget it.
+    private func rememberTranscript(_ text: String) {
+        transcriptExpiry?.cancel()
+        lastTranscript = text
+        transcriptExpiry = Task { [weak self] in
+            try? await Task.sleep(for: Self.transcriptRetention)
+            guard let self, !Task.isCancelled else { return }
+            self.lastTranscript = nil
+        }
+    }
+
     /// Surface a message about something the user dropped that cannot be read.
     ///
     /// Exposed so the drop target can report a rejection through the same
@@ -332,13 +366,13 @@ public final class BeagleController {
 
     private func loadRecognition() async {
         do { _ = try await recognition.prepare() } catch {
-            Log.asr.error("Preload failed: \(error.localizedDescription, privacy: .public)")
+            Log.asr.error("Preload failed: \(error.localizedDescription, privacy: .private)")
         }
     }
 
     private func loadSynthesis() async {
         do { _ = try await synthesis.prepare() } catch {
-            Log.tts.error("Preload failed: \(error.localizedDescription, privacy: .public)")
+            Log.tts.error("Preload failed: \(error.localizedDescription, privacy: .private)")
         }
     }
 
@@ -432,7 +466,9 @@ public final class BeagleController {
     }
 
     private func fail(_ message: String) {
-        Log.app.error("\(message, privacy: .public)")
+        // Same reasoning: a failure message may carry an underlying error that
+        // quotes what the user said or selected.
+        Log.app.error("\(message, privacy: .private)")
         activity = .failed(message: message)
         if settings.playFeedbackSounds { Sounds.failure() }
 
