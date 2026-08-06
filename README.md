@@ -1,13 +1,13 @@
 <div align="center">
 
-# Murmur
+# Hugo
 
 **Local voice in, local voice out — for macOS.**
 
 Press a key, speak, and your words land in whatever app you were typing in.
 Drop text on the orb, and your Mac reads it back. Nothing leaves the machine.
 
-[![CI](https://github.com/loom-labs/murmur/actions/workflows/ci.yml/badge.svg)](https://github.com/loom-labs/murmur/actions/workflows/ci.yml)
+[![CI](https://github.com/loom-labs/hugo/actions/workflows/ci.yml/badge.svg)](https://github.com/loom-labs/hugo/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B%20·%20Apple%20Silicon-black.svg)](#requirements)
 
@@ -21,7 +21,7 @@ Drop text on the orb, and your Mac reads it back. Nothing leaves the machine.
 |---|---|
 | **Dictate anywhere** | Hold a hotkey, talk, release. The transcript is pasted at your cursor in any app. |
 | **Read anything aloud** | Select text and hit a hotkey, or drag text and files onto the floating orb. |
-| **Read the screen** | Snap a region of the screen; Murmur OCRs it and speaks it. |
+| **Read the screen** | Snap a region of the screen; Hugo OCRs it and speaks it. |
 | **Stay out of the way** | A 44-point orb and a menu bar icon. No Dock tile, no window unless you ask. |
 
 ## Shortcuts
@@ -40,7 +40,7 @@ the first model download, no telemetry.
 
 ## Why it is fast
 
-Murmur is a single statically linked Swift binary — roughly 8 MB, no Electron,
+Hugo is a single statically linked Swift binary — roughly 8 MB, no Electron,
 no Python, no bundled runtime. Inference is offloaded to the ANE rather than the
 GPU, which is what keeps it usable as an always-on background app instead of
 something that spins your fans.
@@ -65,25 +65,25 @@ FluidAudio-based app you already run.
 
 ## Install
 
-Download the DMG from [Releases](https://github.com/loom-labs/murmur/releases),
-drag `Murmur.app` to `/Applications`, and launch it.
+Download the DMG from [Releases](https://github.com/loom-labs/hugo/releases),
+drag `Hugo.app` to `/Applications`, and launch it.
 
 The build is ad-hoc signed rather than notarized, so Gatekeeper will complain the
 first time. Clear the quarantine flag:
 
 ```bash
-xattr -dr com.apple.quarantine /Applications/Murmur.app
+xattr -dr com.apple.quarantine /Applications/Hugo.app
 ```
 
 ### Build from source
 
 ```bash
-git clone https://github.com/loom-labs/murmur.git && cd murmur && ./Scripts/build-app.sh
+git clone https://github.com/loom-labs/hugo.git && cd hugo && ./Scripts/build-app.sh
 ```
 
 ## Permissions
 
-Murmur asks for three things, each only when you first use the feature that
+Hugo asks for three things, each only when you first use the feature that
 needs it:
 
 | Permission | Needed for | Where |
@@ -98,11 +98,11 @@ needs it:
 swift build          # debug build
 swift test           # unit tests
 swift format lint -r -s Sources Tests   # lint
-./Scripts/build-app.sh                  # assemble Murmur.app
+./Scripts/build-app.sh                  # assemble Hugo.app
 ```
 
-The package splits into three targets: `MurmurCore` (audio, speech engines,
-settings — no AppKit), `MurmurUI` (SwiftUI views), and `MurmurApp` (lifecycle,
+The package splits into three targets: `HugoCore` (audio, speech engines,
+settings — no AppKit), `HugoUI` (SwiftUI views), and `HugoApp` (lifecycle,
 hotkeys, windows). See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch and
 commit conventions.
 

@@ -2,13 +2,13 @@
 import PackageDescription
 
 let package = Package(
-    name: "Murmur",
+    name: "Hugo",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .executable(name: "Murmur", targets: ["MurmurApp"]),
-        .library(name: "MurmurCore", targets: ["MurmurCore"]),
+        .executable(name: "Hugo", targets: ["HugoApp"]),
+        .library(name: "HugoCore", targets: ["HugoCore"]),
     ],
     dependencies: [
         .package(url: "https://github.com/FluidInference/FluidAudio.git", from: "0.15.5")
@@ -16,24 +16,24 @@ let package = Package(
     targets: [
         // Domain layer: audio, speech engines, settings. No UI, no AppKit chrome.
         .target(
-            name: "MurmurCore",
+            name: "HugoCore",
             dependencies: [
                 .product(name: "FluidAudio", package: "FluidAudio")
             ]
         ),
         // Presentation layer: SwiftUI views and view models.
         .target(
-            name: "MurmurUI",
-            dependencies: ["MurmurCore"]
+            name: "HugoUI",
+            dependencies: ["HugoCore"]
         ),
         // Application shell: lifecycle, hotkeys, windows.
         .executableTarget(
-            name: "MurmurApp",
-            dependencies: ["MurmurCore", "MurmurUI"]
+            name: "HugoApp",
+            dependencies: ["HugoCore", "HugoUI"]
         ),
         .testTarget(
-            name: "MurmurCoreTests",
-            dependencies: ["MurmurCore"]
+            name: "HugoCoreTests",
+            dependencies: ["HugoCore"]
         ),
     ]
 )

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Assemble Murmur.app from a SwiftPM release build.
+# Assemble Hugo.app from a SwiftPM release build.
 #
 # Deliberately does not use xcodebuild: the whole package builds with the
 # Command Line Tools toolchain, so contributors and CI do not need a full Xcode
@@ -11,7 +11,7 @@
 #   Scripts/build-app.sh [--output DIR] [--sign IDENTITY]
 #
 # Options:
-#   --output DIR     Where to write Murmur.app (default: dist)
+#   --output DIR     Where to write Hugo.app (default: dist)
 #   --sign IDENTITY  codesign identity. Defaults to ad-hoc ("-").
 #
 set -euo pipefail
@@ -19,8 +19,8 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly REPO_ROOT
 
-readonly APP_NAME="Murmur"
-readonly BUNDLE_ID="ai.loomlabs.murmur"
+readonly APP_NAME="Hugo"
+readonly BUNDLE_ID="ai.loomlabs.hugo"
 readonly MINIMUM_MACOS="14.0"
 
 output_dir="${REPO_ROOT}/dist"
@@ -73,7 +73,7 @@ mkdir -p "${contents}/MacOS" "${contents}/Resources"
 
 cp "${binary_path}" "${contents}/MacOS/${APP_NAME}"
 
-# LSUIElement keeps Murmur out of the Dock and the ⌘-Tab switcher: it is a
+# LSUIElement keeps Hugo out of the Dock and the ⌘-Tab switcher: it is a
 # background utility, and a Dock tile would imply a main window it does not have.
 #
 # The usage description strings are not optional decoration — macOS kills the
@@ -114,9 +114,9 @@ cat >"${contents}/Info.plist" <<PLIST
     <key>NSSupportsSuddenTermination</key>
     <false/>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Murmur transcribes your speech on this Mac. Audio is never sent anywhere.</string>
+    <string>Hugo transcribes your speech on this Mac. Audio is never sent anywhere.</string>
     <key>NSSpeechRecognitionUsageDescription</key>
-    <string>Murmur recognises speech locally using its own models.</string>
+    <string>Hugo recognises speech locally using its own models.</string>
     <key>NSHumanReadableCopyright</key>
     <string>Licensed under the Apache License 2.0.</string>
 </dict>
