@@ -58,11 +58,24 @@ openssl req -x509 -newkey rsa:2048 -nodes \
     -days 3650 \
     -config "${workdir}/openssl.cnf" >/dev/null 2>&1
 
-openssl pkcs12 -export \
+# Two things here are load-bearing, and both were wrong before:
+#
+#   -legacy      OpenSSL 3 defaults to AES-256-CBC with a SHA-256 MAC, which
+#                Apple's Security framework cannot read. Importing such a file
+#                fails with "MAC verification failed during PKCS12 import
+#                (wrong password?)" — a misleading error, since the password is
+#                fine. -legacy falls back to the algorithms macOS accepts.
+#
+#   a password   An empty PKCS#12 password fails the same import even with
+#                -legacy. The value does not matter; it is used once, here.
+p12_password="$(uuidgen)"
+readonly p12_password
+
+openssl pkcs12 -export -legacy \
     -inkey "${workdir}/key.pem" \
     -in "${workdir}/cert.pem" \
     -out "${workdir}/identity.p12" \
-    -passout pass: >/dev/null 2>&1
+    -passout "pass:${p12_password}" >/dev/null 2>&1
 
 echo "==> Importing into the login keychain"
 echo "    macOS will ask for your password, and again to trust the certificate."
@@ -71,7 +84,7 @@ echo "    macOS will ask for your password, and again to trust the certificate."
 # stop on a keychain dialog.
 security import "${workdir}/identity.p12" \
     -k "${KEYCHAIN}" \
-    -P "" \
+    -P "${p12_password}" \
     -T /usr/bin/codesign
 
 # Authorize codesign against the imported key. `-k` is deliberately omitted so
@@ -84,6 +97,11 @@ if ! security set-key-partition-list -S apple-tool:,apple:,codesign: \
     -s "${KEYCHAIN}" >/dev/null 2>&1; then
     echo "    Skipped — codesign may prompt on first use. Choose \"Always Allow\"."
 fi
+
+# Deliberately no `security add-trusted-cert`. A self-signed certificate is
+# never "valid" to `find-identity -v`, but codesign signs with it regardless —
+# trust governs verification, not signing. Skipping it avoids an admin
+# authorization prompt for no benefit.
 
 echo
 echo "Created '${IDENTITY_NAME}'."
