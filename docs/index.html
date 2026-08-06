@@ -173,9 +173,6 @@
     color: var(--muted);
   }
 
-  .dedication { margin-top: 1rem; font-size: .9rem; color: var(--faint); }
-  .dedication b { color: var(--thread); font-weight: 600; }
-
   .cta { display: flex; gap: .65rem; justify-content: center; flex-wrap: wrap; margin-top: 2.2rem; }
 
   .btn {
@@ -208,26 +205,29 @@
      because the refusal is the first thing a user meets and it reads like a
      virus warning. */
   .gate {
-    margin: 1.6rem auto 0;
-    max-width: 52ch;
+    margin: 2rem auto 0;
+    max-width: 60ch;
     text-align: left;
     border: 1px solid var(--line);
-    border-radius: 12px;
+    border-radius: 14px;
     background: var(--wash);
-    padding: 1rem 1.1rem;
+    padding: 1.25rem 1.35rem 1.35rem;
   }
-  .gate p { margin: 0 0 .7rem; font-size: .86rem; color: var(--muted); }
+  .gate p { margin: 0 0 1rem; font-size: .875rem; line-height: 1.6; color: var(--muted); }
   .gate em { color: var(--ink); font-style: normal; font-weight: 560; }
 
+  /* The command wraps rather than being clipped: a truncated shell command is
+     worse than no command at all, and this one is long enough to overflow at
+     any sensible width. */
   .copy {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 1rem;
     width: 100%;
-    padding: .6rem .75rem;
+    padding: .8rem .9rem;
     border: 1px solid var(--line);
-    border-radius: 9px;
+    border-radius: 10px;
     background: var(--white);
     cursor: pointer;
     font: inherit;
@@ -235,8 +235,25 @@
     transition: border-color .2s var(--ease);
   }
   .copy:hover { border-color: var(--brand); }
-  .copy code { font-size: .78rem; color: var(--ink); overflow-x: auto; white-space: nowrap; }
-  .copy-label { font-size: .74rem; font-weight: 650; color: var(--faint); letter-spacing: .05em; text-transform: uppercase; flex-shrink: 0; }
+  .copy code {
+    flex: 1;
+    min-width: 0;
+    font-size: .8rem;
+    line-height: 1.65;
+    color: var(--ink);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .copy-label {
+    font-size: .7rem;
+    font-weight: 650;
+    color: var(--faint);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    padding-top: .1rem;
+  }
+  .copy:hover .copy-label { color: var(--brand); }
 
   /* Credibility row, standing in for a logo wall. */
   .stack {
@@ -432,8 +449,6 @@
     Dictate into any app. Have anything read back to you. Both models run on the
     Apple Neural Engine — no cloud, no account, no telemetry.
   </p>
-  <p class="dedication">Named for, and dedicated to, Hugo — who wears the <b>red thread</b>.</p>
-
   <div class="cta">
     <a class="btn btn-primary" href="https://github.com/loom-labs/beagle/releases/latest">Download for macOS &nbsp;→</a>
     <a class="btn btn-secondary" href="https://github.com/loom-labs/beagle">View source</a>
@@ -465,9 +480,9 @@
   <div class="visual">
     <div class="flow">
       <div class="chips">
-        <div class="chip"><span>Speak into any app</span><span class="k">⇧⌘L</span></div>
-        <div class="chip"><span>Read the selection</span><span class="k">⇧⌘S</span></div>
-        <div class="chip"><span>Read the screen</span><span class="k">⇧⌘R</span></div>
+        <div class="chip"><span>Speak into any app</span><span class="k">⌃⌥L</span></div>
+        <div class="chip"><span>Read the selection</span><span class="k">⌃⌥K</span></div>
+        <div class="chip"><span>Read the screen</span><span class="k">⌃⌥J</span></div>
       </div>
 
       <div class="hub">
@@ -493,15 +508,15 @@
     <div class="grid">
       <article class="feature">
         <h3>Dictate anywhere</h3>
-        <p>Hold <kbd>⇧⌘L</kbd>, talk, let go. The transcript lands at your cursor in whatever app you were already typing in. His ears lift while he hears you, so you never wonder whether it is listening.</p>
+        <p>Hold <kbd>⌃⌥L</kbd>, talk, let go. The transcript lands at your cursor in whatever app you were already typing in. His ears lift while he hears you, so you never wonder whether it is listening.</p>
       </article>
       <article class="feature">
         <h3>Read anything aloud</h3>
-        <p>Select text and press <kbd>⇧⌘S</kbd>, or drag a paragraph or a <code>.txt</code> file onto the orb. Speech starts after the first sentence rather than the last.</p>
+        <p>Select text and press <kbd>⌃⌥K</kbd>, or drag a paragraph or a <code>.txt</code> file onto the orb. Speech starts after the first sentence rather than the last.</p>
       </article>
       <article class="feature">
         <h3>Read the screen</h3>
-        <p><kbd>⇧⌘R</kbd> snaps a region, pulls the text out of it with Apple Vision, and speaks it. For anything you cannot select.</p>
+        <p><kbd>⌃⌥J</kbd> snaps a region, pulls the text out of it with Apple Vision, and speaks it. For anything you cannot select.</p>
       </article>
       <article class="feature">
         <h3>Stay out of the way</h3>
@@ -563,22 +578,12 @@ cd beagle &amp;&amp; ./Scripts/build-app.sh</pre>
     </div>
   </section>
 
-  <section class="shell">
-    <p class="eyebrow">Next</p>
-    <h2>A companion you can think out loud with</h2>
-    <p class="lede">
-      A third mode is planned: conversation. The same two engines plus an on-device
-      language model, with memory that stays on your Mac — for unpacking an idea or
-      clearing mental clutter, out loud. Tracked in
-      <a href="https://github.com/loom-labs/beagle/issues/8" style="color:var(--brand); font-weight:560">issue&nbsp;#8</a>.
-    </p>
-  </section>
 </main>
 
 <footer>
   <div class="shell foot-inner">
-    <span>Built by <a href="https://github.com/loom-labs">Loom Labs</a> · Apache-2.0</span>
-    <span>For Hugo 🐾</span>
+    <span>Built by <a href="https://github.com/loom-labs">Loom Labs</a></span>
+    <span>Apache-2.0</span>
   </div>
 </footer>
 

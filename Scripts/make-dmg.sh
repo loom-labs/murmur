@@ -77,9 +77,9 @@ ${APP_NAME} ${version}
 3. Launch ${APP_NAME}. It lives in the menu bar — there is no Dock icon.
 
 Shortcuts
-    Shift-Cmd-L    dictate (hold to talk, or press to toggle)
-    Shift-Cmd-S    read the current selection aloud
-    Shift-Cmd-R    capture a screen region and read it aloud
+    Control-Option-L    dictate (hold to talk, or press to toggle)
+    Control-Option-K    read the current selection aloud
+    Control-Option-J    capture a screen region and read it aloud
 
 You can also drop text or a .txt/.md file onto the floating orb.
 
