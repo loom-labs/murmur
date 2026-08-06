@@ -7,6 +7,8 @@
 Press a key, speak, and your words land in whatever app you were typing in.
 Drop text on the orb, and your Mac reads it back. Nothing leaves the machine.
 
+A good beagle: hears you, answers, stays out of the way.
+
 [![CI](https://github.com/loom-labs/hugo/actions/workflows/ci.yml/badge.svg)](https://github.com/loom-labs/hugo/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B%20·%20Apple%20Silicon-black.svg)](#requirements)
@@ -37,6 +39,16 @@ the orb to start dictating.
 
 Everything runs on the Apple Neural Engine. No API keys, no network calls after
 the first model download, no telemetry.
+
+The orb shows what Hugo is doing: bars that move with your voice while it is
+listening, a sweep while it transcribes, an equalizer while it speaks.
+
+## Next
+
+A third mode is planned — a **local conversation companion** you can think out
+loud with, using the same two engines plus an on-device LLM, with memory that
+never leaves your Mac. Tracked in
+[#8](https://github.com/loom-labs/hugo/issues/8).
 
 ## Why it is fast
 
