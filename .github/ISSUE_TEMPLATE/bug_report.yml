@@ -1,5 +1,5 @@
 name: Bug report
-description: Something in Hugo does not work
+description: Something in Beagle does not work
 labels: [bug]
 body:
   - type: textarea
@@ -13,7 +13,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Hugo version
+      label: Beagle version
       placeholder: "0.1.0 (see the menu bar dropdown)"
     validations:
       required: true
@@ -34,6 +34,6 @@ body:
         Output of the command below, covering the minute the problem happened.
       value: |
         ```
-        log show --predicate 'subsystem == "ai.loomlabs.hugo"' --last 10m
+        log show --predicate 'subsystem == "ai.loomlabs.beagle"' --last 10m
         ```
       render: shell

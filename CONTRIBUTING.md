@@ -6,11 +6,11 @@ project is trying to be, see the [README](README.md).
 ## Getting set up
 
 You need macOS 14+ on Apple Silicon and a Swift 6 toolchain (Xcode 16 or the
-Command Line Tools — Hugo builds without a full Xcode install).
+Command Line Tools — Beagle builds without a full Xcode install).
 
 ```bash
-git clone https://github.com/loom-labs/hugo.git
-cd hugo
+git clone https://github.com/loom-labs/beagle.git
+cd beagle
 swift build && swift test
 ```
 
@@ -44,7 +44,7 @@ fix: release the audio engine when dictation is cancelled #patch
 
 ## Versioning
 
-Hugo is versioned with semver, and releases are cut automatically. The
+Beagle is versioned with semver, and releases are cut automatically. The
 `#major` / `#minor` / `#patch` tag in the **pull request title** decides the
 bump — when the PR squash-merges to `main`, CI reads that tag, bumps
 [`VERSION`](VERSION), tags the commit, builds the DMG, and publishes a release.
@@ -88,10 +88,10 @@ swift format lint -r -s Sources Tests # check
 Beyond formatting:
 
 - **No `#Preview`.** That macro is implemented by a compiler plugin bundled with
-  Xcode. Hugo builds with the Command Line Tools toolchain — in CI and for
+  Xcode. Beagle builds with the Command Line Tools toolchain — in CI and for
   contributors without a full Xcode install — and `#Preview` fails to compile
   there. Preview views by running the app.
-- **Keep `HugoCore` free of SwiftUI.** Core owns audio, the speech engines,
+- **Keep `BeagleCore` free of SwiftUI.** Core owns audio, the speech engines,
   input, and orchestration; it imports AppKit where the platform requires it
   (the pasteboard, permissions, `NSEvent`). What it must never contain is a
   `View`. That boundary is what keeps the engines testable and keeps the UI
@@ -105,4 +105,4 @@ Beyond formatting:
 ## Reporting bugs
 
 Open an issue with your macOS version, chip, and — if it is a crash or a hang —
-the relevant lines from Console.app filtered to subsystem `ai.loomlabs.hugo`.
+the relevant lines from Console.app filtered to subsystem `ai.loomlabs.beagle`.
