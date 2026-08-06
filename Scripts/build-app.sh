@@ -11,8 +11,9 @@
 #   Scripts/build-app.sh [--output DIR] [--sign IDENTITY]
 #
 # Options:
-#   --output DIR     Where to write Hugo.app (default: dist)
-#   --sign IDENTITY  codesign identity. Defaults to ad-hoc ("-").
+#   --output DIR      Where to write Hugo.app (default: dist)
+#   --sign IDENTITY   codesign identity. Defaults to ad-hoc ("-").
+#   --version X.Y.Z   Version to stamp. Defaults to the latest vX.Y.Z git tag.
 #
 set -euo pipefail
 
@@ -25,6 +26,7 @@ readonly MINIMUM_MACOS="14.0"
 
 output_dir="${REPO_ROOT}/dist"
 sign_identity="-"
+version=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -34,6 +36,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --sign)
             sign_identity="$2"
+            shift 2
+            ;;
+        --version)
+            version="$2"
             shift 2
             ;;
         -h | --help)
@@ -47,7 +53,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-version="$(tr -d '[:space:]' <"${REPO_ROOT}/VERSION")"
+# Git tags are the source of truth for released versions. A tree with no tags
+# yet — a fresh clone before the first release — builds as 0.0.0 rather than
+# failing outright.
+if [[ -z "${version}" ]]; then
+    version="$(git -C "${REPO_ROOT}" describe --tags --abbrev=0 --match 'v[0-9]*' 2>/dev/null || true)"
+    version="${version#v}"
+fi
+if [[ -z "${version}" ]]; then
+    version="0.0.0"
+fi
 readonly version
 
 echo "==> Building ${APP_NAME} ${version} (release, arm64)"
@@ -123,9 +138,11 @@ cat >"${contents}/Info.plist" <<PLIST
 </plist>
 PLIST
 
-if [[ -f "${REPO_ROOT}/Resources/AppIcon.icns" ]]; then
-    cp "${REPO_ROOT}/Resources/AppIcon.icns" "${contents}/Resources/AppIcon.icns"
+if [[ ! -f "${REPO_ROOT}/Resources/AppIcon.icns" ]]; then
+    echo "==> Rendering app icon"
+    swift "${REPO_ROOT}/Scripts/make-icon.swift" "${REPO_ROOT}/Resources/AppIcon.icns"
 fi
+cp "${REPO_ROOT}/Resources/AppIcon.icns" "${contents}/Resources/AppIcon.icns"
 
 printf 'APPL????' >"${contents}/PkgInfo"
 
