@@ -21,7 +21,11 @@ public struct MenuBarContent: View {
         Text(controller.activity.summary)
 
         if !TextInjector.canPostEvents {
-            Text("Accessibility is off — transcripts go to the clipboard")
+            Text(
+                Permissions.accessibilityNeedsRelaunch
+                    ? "Relaunch to finish enabling Accessibility"
+                    : "Accessibility is off — transcripts go to the clipboard"
+            )
             Text("Remove any old Beagle entry first; the grant is tied to each build.")
             Button("Open Accessibility Settings…") {
                 Permissions.openSettings(for: .accessibility)
