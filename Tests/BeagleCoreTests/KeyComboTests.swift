@@ -17,11 +17,11 @@ struct KeyComboTests {
 
     @Test("Display name pairs modifiers with the key")
     func displayName() {
-        // ⌃⌥⌘ rather than ⌃⌥: window managers claim ⌃⌥ — Rectangle owns ⌃⌥J
-        // and ⌃⌥K for quarter-tiling. See KeyCombo's defaults for the reasoning.
-        #expect(KeyCombo.dictation.displayName == "⌃⌥⌘L")
-        #expect(KeyCombo.speakSelection.displayName == "⌃⌥⌘K")
-        #expect(KeyCombo.readScreen.displayName == "⌃⌥⌘J")
+        // ⌃⌥ with letters Rectangle does not claim. It owns U I J K, C D E F G T
+        // and the arrows; L, S and R are clear. See KeyCombo for the reasoning.
+        #expect(KeyCombo.dictation.displayName == "⌃⌥L")
+        #expect(KeyCombo.speakSelection.displayName == "⌃⌥S")
+        #expect(KeyCombo.readScreen.displayName == "⌃⌥R")
     }
 
     @Test("Special keys render as glyphs, not codes")
@@ -83,7 +83,7 @@ struct KeyComboTests {
         let decoded = try JSONDecoder().decode(KeyCombo.self, from: data)
 
         #expect(decoded == original)
-        #expect(decoded.displayName == "⌃⌥⌘L")
+        #expect(decoded.displayName == "⌃⌥L")
     }
 
     @Test("Defaults are distinct from one another")

@@ -64,19 +64,19 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
 
     // MARK: - Defaults
 
-    // Control-Option-Command, not Control-Option. ⌃⌥ turned out to be far from
-    // unused: Rectangle claims that whole namespace for window management, and
-    // ⌃⌥J and ⌃⌥K are its bottom-left and bottom-right quarters — a direct
-    // collision with two of the three defaults below. Window managers are
-    // common enough that ⌃⌥ is not safe to assume.
+    // Two modifiers and a letter — three keys. A third modifier would be safer
+    // in the abstract and worse in the hand, and these are pressed constantly.
     //
-    // Adding ⌘ steps outside it. Three-modifier combinations are rare in
-    // application shortcuts precisely because they are awkward to type by
-    // accident, which is what makes them safe to hold system-wide.
+    // The letters are chosen around window managers rather than by adding
+    // modifiers. Rectangle, the most common one, claims ⌃⌥ with U I J K for
+    // quarters, C D E F G T for thirds and centring, the arrows for halves,
+    // and ⌃⌥⌘←/→ for displays — so adding ⌘ would have moved into its
+    // namespace, not out of it. L, S and R are clear of all of it, and happen
+    // to be mnemonic: listen, speak, read.
     //
-    // Note that macOS cannot report which combinations other applications
-    // already own — see `HotKeyCenter.isAvailable` — so this is chosen by
-    // avoiding a known conflict, not by verifying the field is clear.
+    // macOS cannot report which combinations other applications hold — see
+    // `HotKeyCenter.isAvailable` — so this avoids a known conflict rather than
+    // proving the field is clear. Shortcuts are rebindable for the rest.
     //
     // Fn is deliberately not offered. `RegisterEventHotKey` accepts only
     // ⌘/⇧/⌥/⌃ — Fn is not a Carbon modifier — so an Fn shortcut would require a
@@ -87,19 +87,19 @@ public struct KeyCombo: Equatable, Hashable, Codable, Sendable {
     /// Start and stop dictation. Held in push-to-talk mode.
     public static let dictation = KeyCombo(
         keyCode: UInt32(kVK_ANSI_L),
-        modifiers: [.control, .option, .command]
+        modifiers: [.control, .option]
     )
 
     /// Read the current selection aloud.
     public static let speakSelection = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_K),
-        modifiers: [.control, .option, .command]
+        keyCode: UInt32(kVK_ANSI_S),
+        modifiers: [.control, .option]
     )
 
     /// Capture a region of the screen and read it aloud.
     public static let readScreen = KeyCombo(
-        keyCode: UInt32(kVK_ANSI_J),
-        modifiers: [.control, .option, .command]
+        keyCode: UInt32(kVK_ANSI_R),
+        modifiers: [.control, .option]
     )
 
     // MARK: - Key names
