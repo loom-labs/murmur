@@ -154,6 +154,40 @@
 
   .req { margin-top: 1rem; font-size: .84rem; color: var(--faint); }
 
+  /* Gatekeeper note. Placed with the download rather than buried further down,
+     because the refusal is the first thing a user meets and it reads like a
+     virus warning. */
+  .gate {
+    margin: 1.6rem auto 0;
+    max-width: 52ch;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--wash);
+    padding: 1rem 1.1rem;
+  }
+  .gate p { margin: 0 0 .7rem; font-size: .86rem; color: var(--muted); }
+  .gate em { color: var(--ink); font-style: normal; font-weight: 560; }
+
+  .copy {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: .6rem .75rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--white);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+    transition: border-color .2s var(--ease);
+  }
+  .copy:hover { border-color: var(--brand); }
+  .copy code { font-size: .78rem; color: var(--ink); overflow-x: auto; white-space: nowrap; }
+  .copy-label { font-size: .74rem; font-weight: 650; color: var(--faint); letter-spacing: .05em; text-transform: uppercase; flex-shrink: 0; }
+
   /* Credibility row, standing in for a logo wall. */
   .stack {
     display: flex;
@@ -353,6 +387,18 @@
   </div>
   <p class="req">macOS 14+ · Apple Silicon · 8 MB app · Apache-2.0</p>
 
+  <div class="gate">
+    <p>
+      macOS will say it <em>“could not verify Beagle is free of malware”</em> —
+      that is the missing notarization, not a finding. After dragging it to
+      Applications:
+    </p>
+    <button class="copy" type="button" data-copy="xattr -dr com.apple.quarantine /Applications/Beagle.app">
+      <code>xattr -dr com.apple.quarantine /Applications/Beagle.app</code>
+      <span class="copy-label">Copy</span>
+    </button>
+  </div>
+
   <div class="stack">
     <span><b>Parakeet TDT v3</b></span>
     <span class="plus">+</span>
@@ -486,6 +532,21 @@ cd beagle &amp;&amp; ./Scripts/build-app.sh</pre>
 <script>
   // Hairline under the nav only once the page has moved, so the very top of the
   // page stays completely clean.
+  // Copy-to-clipboard for the quarantine command.
+  for (const button of document.querySelectorAll('.copy')) {
+    button.addEventListener('click', async () => {
+      const label = button.querySelector('.copy-label');
+      try {
+        await navigator.clipboard.writeText(button.dataset.copy);
+        label.textContent = 'Copied';
+      } catch {
+        // Clipboard access can be refused; the text is selectable regardless.
+        label.textContent = 'Select it';
+      }
+      setTimeout(() => { label.textContent = 'Copy'; }, 1800);
+    });
+  }
+
   const nav = document.getElementById('nav');
   const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
   onScroll();
