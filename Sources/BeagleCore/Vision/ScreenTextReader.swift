@@ -1,11 +1,14 @@
 import AppKit
 import Foundation
+@preconcurrency import ScreenCaptureKit
 import Vision
 
 /// Errors raised while reading text off the screen.
 public enum ScreenTextError: LocalizedError {
     case cancelled
     case captureFailed
+    case captureBlank
+    case noDisplay
     case noTextFound
     case recognitionFailed(underlying: any Error)
 
@@ -15,6 +18,10 @@ public enum ScreenTextError: LocalizedError {
             return "Screen capture was cancelled."
         case .captureFailed:
             return "Could not capture that part of the screen."
+        case .captureBlank:
+            return "The capture came back empty — check Screen Recording access for Beagle."
+        case .noDisplay:
+            return "Could not find the display to capture."
         case .noTextFound:
             return "No readable text in that area."
         case .recognitionFailed(let underlying):
@@ -42,38 +49,99 @@ public enum ScreenTextReader {
         return try await recognizeText(in: image)
     }
 
-    /// Run the interactive region picker and return the captured image.
+    /// Let the user drag out a region, then capture exactly that.
+    ///
+    /// Uses ScreenCaptureKit rather than spawning `/usr/sbin/screencapture`.
+    /// That subprocess is attributed to itself for TCC purposes, so the Screen
+    /// Recording grant given to Beagle did not apply to it and macOS returned a
+    /// blank image — which surfaced to users as "no readable text in that area"
+    /// with no hint that a permission was the cause.
     private static func captureRegion() async throws -> CGImage {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("beagle-capture-\(UUID().uuidString).png")
-        defer { try? FileManager.default.removeItem(at: url) }
-
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        // -i interactive, -x silent (no shutter sound), -o no window shadow.
-        process.arguments = ["-i", "-x", "-o", url.path]
-
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, any Error>) in
-            process.terminationHandler = { _ in continuation.resume() }
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: ScreenTextError.captureFailed)
-            }
-        }
-
-        // screencapture exits 0 and writes nothing when the user presses Escape.
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard let rect = await RegionSelector().selectRegion() else {
             throw ScreenTextError.cancelled
         }
 
-        guard
-            let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-            let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
-        else {
+        let content = try await SCShareableContent.excludingDesktopWindows(
+            false,
+            onScreenWindowsOnly: true
+        )
+
+        // Pick the display the selection actually falls on, so a drag on a
+        // second monitor captures that monitor.
+        guard let display = display(containing: rect, from: content.displays) else {
+            throw ScreenTextError.noDisplay
+        }
+
+        // Beagle's own windows are excluded so the dimming overlay and the orb
+        // never end up in the captured pixels.
+        let filter = SCContentFilter(
+            display: display,
+            excludingApplications: content.applications.filter {
+                $0.bundleIdentifier == Beagle.bundleIdentifier
+            },
+            exceptingWindows: []
+        )
+
+        let configuration = SCStreamConfiguration()
+        configuration.sourceRect = displayRelativeRect(rect, on: display)
+        // Capture at backing scale so text on a Retina display keeps the detail
+        // recognition depends on.
+        let scale =
+            NSScreen.screens
+            .first { NSPointInRect(CGPoint(x: rect.midX, y: rect.midY), $0.frame) }?
+            .backingScaleFactor ?? 2
+        configuration.width = Int(configuration.sourceRect.width * scale)
+        configuration.height = Int(configuration.sourceRect.height * scale)
+        configuration.captureResolution = .best
+        configuration.showsCursor = false
+
+        let image: CGImage
+        do {
+            image = try await SCScreenshotManager.captureImage(
+                contentFilter: filter,
+                configuration: configuration
+            )
+        } catch {
             throw ScreenTextError.captureFailed
         }
+
+        guard image.width > 0, image.height > 0 else {
+            throw ScreenTextError.captureBlank
+        }
         return image
+    }
+
+    /// The display whose bounds contain the centre of `rect`.
+    private static func display(containing rect: CGRect, from displays: [SCDisplay]) -> SCDisplay? {
+        let centre = CGPoint(x: rect.midX, y: rect.midY)
+        // `SCDisplay.frame` is top-left origin like CoreGraphics; NSScreen is
+        // bottom-left. Match through NSScreen, which is what the selection used.
+        let screen = NSScreen.screens.first { NSPointInRect(centre, $0.frame) } ?? NSScreen.main
+        guard
+            let number = screen?.deviceDescription[
+                NSDeviceDescriptionKey("NSScreenNumber")
+            ] as? CGDirectDisplayID
+        else {
+            return displays.first
+        }
+        return displays.first { $0.displayID == number } ?? displays.first
+    }
+
+    /// Convert a bottom-left-origin screen rect into the top-left-origin,
+    /// display-relative rect `SCStreamConfiguration.sourceRect` expects.
+    private static func displayRelativeRect(_ rect: CGRect, on display: SCDisplay) -> CGRect {
+        let screen = NSScreen.screens.first {
+            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID)
+                == display.displayID
+        }
+        let frame = screen?.frame ?? CGRect(x: 0, y: 0, width: display.width, height: display.height)
+
+        return CGRect(
+            x: rect.origin.x - frame.origin.x,
+            y: frame.maxY - rect.maxY,
+            width: rect.width,
+            height: rect.height
+        )
     }
 
     /// Recognize text in `image` and return it in reading order.
