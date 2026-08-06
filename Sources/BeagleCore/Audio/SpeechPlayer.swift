@@ -77,9 +77,13 @@ public final class SpeechPlayer {
         try startEngineIfNeeded()
 
         pendingBuffers += 1
-        player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
-            // The completion handler fires on an audio thread; hop to the main
-            // actor before touching state.
+        // `@Sendable` is load-bearing, not decoration. Without it the closure
+        // is *inferred* to be `@MainActor`, because it is written inside a
+        // `@MainActor` method and captures a `@MainActor` class. AVFAudio then
+        // calls it on AVAudioPlayerNodeImpl.CompletionHandlerQueue, and the
+        // Swift runtime's isolation check traps on entry — before the hop below
+        // ever runs. That crashed the app every time speech finished playing.
+        player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { @Sendable [weak self] _ in
             Task { @MainActor in self?.bufferFinished() }
         }
 
