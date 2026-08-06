@@ -216,6 +216,23 @@ public final class MurmurController {
         }
     }
 
+    /// Capture a region of the screen, read the text in it, and speak it.
+    public func readScreenRegion() async {
+        guard await Permissions.request(.screenRecording) else {
+            fail("Screen Recording access is off. Turn it on in System Settings.")
+            return
+        }
+
+        do {
+            let text = try await ScreenTextReader.captureRegionAndRecognize()
+            speak(text)
+        } catch ScreenTextError.cancelled {
+            // Pressing Escape is a decision, not a failure.
+        } catch {
+            fail(error.localizedDescription)
+        }
+    }
+
     /// Speak `text`, replacing anything currently being spoken.
     public func speak(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -339,6 +356,16 @@ public final class MurmurController {
                 } else {
                     Task { await self.speakSelection() }
                 }
+            })
+        {
+            hotKeyTokens.append(token)
+        }
+
+        if let token = center.register(
+            .readScreen,
+            handler: { [weak self] edge in
+                guard let self, edge == .pressed else { return }
+                Task { await self.readScreenRegion() }
             })
         {
             hotKeyTokens.append(token)

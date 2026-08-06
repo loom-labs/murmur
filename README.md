@@ -24,6 +24,17 @@ Drop text on the orb, and your Mac reads it back. Nothing leaves the machine.
 | **Read the screen** | Snap a region of the screen; Murmur OCRs it and speaks it. |
 | **Stay out of the way** | A 44-point orb and a menu bar icon. No Dock tile, no window unless you ask. |
 
+## Shortcuts
+
+| Action | Shortcut |
+|---|---|
+| Dictate — hold to talk, or press to toggle | ⇧⌘L |
+| Speak the current selection (press again to stop) | ⇧⌘S |
+| Capture a screen region and read it aloud | ⇧⌘R |
+
+You can also drop text or a `.txt`/`.md` file onto the orb to hear it, or click
+the orb to start dictating.
+
 Everything runs on the Apple Neural Engine. No API keys, no network calls after
 the first model download, no telemetry.
 
