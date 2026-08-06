@@ -39,21 +39,41 @@ public enum Murmur {
         return directory
     }
 
-    /// Cache location for downloaded Core ML weights.
+    /// Where downloaded Core ML weights live: `~/Library/Application
+    /// Support/FluidAudio/Models`.
     ///
-    /// Deliberately under `~/.cache` rather than Application Support: these are
-    /// reproducible downloads, not user data, so they should not be swept into
-    /// backups. This is also the path FluidAudio defaults to, which means a
-    /// user who already runs another FluidAudio-backed app shares the weights
-    /// instead of paying for a second copy.
-    public static func modelsDirectory() throws -> URL {
-        let home = FileManager.default.homeDirectoryForCurrentUser
-        let directory =
-            home
-            .appendingPathComponent(".cache", isDirectory: true)
-            .appendingPathComponent("fluidaudio", isDirectory: true)
+    /// This is FluidAudio's own default, and Murmur deliberately does not
+    /// override it — a user who already runs another FluidAudio-backed app
+    /// shares the weights instead of paying for a second ~1 GB copy.
+    ///
+    /// Not created here: FluidAudio owns the layout inside this directory, and
+    /// this accessor exists so the UI can report cache size and offer to clear it.
+    public static func modelsDirectory() -> URL {
+        let base =
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)
+            .first ?? FileManager.default.homeDirectoryForCurrentUser
+        return
+            base
+            .appendingPathComponent("FluidAudio", isDirectory: true)
             .appendingPathComponent("Models", isDirectory: true)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return directory
+    }
+
+    /// Total bytes occupied by downloaded weights, or zero when nothing is cached.
+    public static func cachedModelBytes() -> Int64 {
+        let directory = modelsDirectory()
+        guard
+            let enumerator = FileManager.default.enumerator(
+                at: directory,
+                includingPropertiesForKeys: [.fileAllocatedSizeKey],
+                options: [.skipsHiddenFiles]
+            )
+        else { return 0 }
+
+        var total: Int64 = 0
+        for case let url as URL in enumerator {
+            let size = try? url.resourceValues(forKeys: [.fileAllocatedSizeKey]).fileAllocatedSize
+            total += Int64(size ?? 0)
+        }
+        return total
     }
 }
