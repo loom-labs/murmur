@@ -87,23 +87,37 @@ func drawIcon(size: Int) -> CGImage? {
     ctx.setStrokeColor(thread)
     ctx.setLineWidth(max(1.6, w * 0.030))
     ctx.setLineCap(.round)
-    let threadY = headC.y - headH * 0.605
-    ctx.move(to: CGPoint(x: rect.midX - headW * 0.36, y: threadY + w * 0.036))
-    ctx.addQuadCurve(to: CGPoint(x: rect.midX + headW * 0.36, y: threadY + w * 0.036),
-                     control: CGPoint(x: rect.midX, y: threadY - w * 0.070))
+    // Narrow and tucked under the chin. Spread wider it floats in open
+    // background and reads as a mouth rather than something worn.
+    let threadY = headC.y - headH * 0.545
+    ctx.move(to: CGPoint(x: rect.midX - headW * 0.27, y: threadY + w * 0.028))
+    ctx.addQuadCurve(to: CGPoint(x: rect.midX + headW * 0.27, y: threadY + w * 0.028),
+                     control: CGPoint(x: rect.midX, y: threadY - w * 0.055))
     ctx.strokePath()
 
     // Ears, behind the head
-    let earSize = CGSize(width: w * 0.275, height: w * 0.60)
-    let earDX = headW * 0.505
-    let earY = headC.y - w * 0.135
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX, y: earY), size: earSize, degrees: 17, color: tan)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX, y: earY), size: earSize, degrees: -17, color: tan)
+    // The rotation sign matters more than the magnitude. Rotating the left ear
+    // counter-clockwise swings its *bottom* inward, so the pair converged on
+    // the muzzle and read as jowls. Negative on the left and positive on the
+    // right flares the bottoms away from the face, which is what makes them
+    // legible as ears.
+    let earSize = CGSize(width: w * 0.265, height: w * 0.60)
+    let earDX = headW * 0.545
+    let earY = headC.y - w * 0.150
+    let earAngle: CGFloat = 26
+    fillRotatedEllipse(
+        ctx, center: CGPoint(x: headC.x - earDX, y: earY), size: earSize,
+        degrees: -earAngle, color: tan)
+    fillRotatedEllipse(
+        ctx, center: CGPoint(x: headC.x + earDX, y: earY), size: earSize,
+        degrees: earAngle, color: tan)
     let earInner = CGSize(width: earSize.width * 0.54, height: earSize.height * 0.68)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x - earDX - w * 0.010, y: earY - w * 0.030),
-                       size: earInner, degrees: 17, color: tanDark)
-    fillRotatedEllipse(ctx, center: CGPoint(x: headC.x + earDX + w * 0.010, y: earY - w * 0.030),
-                       size: earInner, degrees: -17, color: tanDark)
+    fillRotatedEllipse(
+        ctx, center: CGPoint(x: headC.x - earDX - w * 0.012, y: earY - w * 0.028),
+        size: earInner, degrees: -earAngle, color: tanDark)
+    fillRotatedEllipse(
+        ctx, center: CGPoint(x: headC.x + earDX + w * 0.012, y: earY - w * 0.028),
+        size: earInner, degrees: earAngle, color: tanDark)
 
     // Head
     ctx.setFillColor(tan)
