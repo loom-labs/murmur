@@ -82,6 +82,12 @@ private struct GeneralSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
+                Picker("Theme", selection: $controller.settings.appearance) {
+                    ForEach(BeagleCore.Settings.Appearance.allCases, id: \.self) { appearance in
+                        Text(appearance.title).tag(appearance)
+                    }
+                }
+
                 Toggle("Show the floating orb", isOn: $controller.settings.showsOrb)
                 Toggle(
                     "Play a sound when recording starts and stops",
