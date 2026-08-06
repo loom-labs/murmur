@@ -47,7 +47,19 @@ struct ScreenTextJoinTests {
     }
 }
 
-@Suite("Screen text recognition")
+/// Recognition checks that run Vision against rendered images.
+///
+/// Skipped unless `MURMUR_INTEGRATION=1`. These pass locally in under a second
+/// but **hang indefinitely** on GitHub's headless macOS runners — the first CI
+/// run on this branch sat in `VNRecognizeTextRequest` until the job was
+/// cancelled. Vision's text recognition wants a real graphics stack, so it is
+/// treated like the model-backed suites and kept out of CI.
+///
+///     MURMUR_INTEGRATION=1 swift test --filter ScreenTextRecognitionTests
+@Suite(
+    "Screen text recognition",
+    .enabled(if: ProcessInfo.processInfo.environment["MURMUR_INTEGRATION"] == "1")
+)
 struct ScreenTextRecognitionTests {
 
     /// Render `text` into an image the way it would appear on screen.
