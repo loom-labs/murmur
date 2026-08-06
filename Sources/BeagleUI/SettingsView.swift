@@ -39,7 +39,7 @@ private struct GeneralSettings: View {
                         Text(mode.title).tag(mode)
                     }
                 }
-                LabeledContent("Shortcut", value: KeyCombo.dictation.displayName)
+                ShortcutRecorder("Shortcut", combo: $controller.settings.dictationShortcut)
 
                 Picker("When finished", selection: $controller.settings.transcriptDelivery) {
                     ForEach(BeagleCore.Settings.TranscriptDelivery.allCases, id: \.self) { delivery in
@@ -49,7 +49,8 @@ private struct GeneralSettings: View {
             }
 
             Section("Speech") {
-                LabeledContent("Shortcut", value: KeyCombo.speakSelection.displayName)
+                ShortcutRecorder("Speak selection", combo: $controller.settings.speakSelectionShortcut)
+                ShortcutRecorder("Read screen region", combo: $controller.settings.readScreenShortcut)
 
                 // Stepped rather than continuous: a slider that lands on 1.03×
                 // is a slider that never lands on 1×.

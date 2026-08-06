@@ -46,6 +46,8 @@ public enum TextInjector {
     private struct PasteboardSnapshot {
         let items: [[NSPasteboard.PasteboardType: Data]]
         let changeCount: Int
+        /// The clipboard held password-manager content, so nothing was read.
+        let wasConcealed: Bool
     }
 
     /// Whether this process may post synthetic keyboard events.
@@ -87,6 +89,11 @@ public enum TextInjector {
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+        // Tell clipboard-history apps not to archive this. The transcript is on
+        // the clipboard only as a means of pasting it, and dictated text is
+        // exactly the kind of thing a user would not expect to find in a
+        // clipboard log later.
+        pasteboard.setData(Data(), forType: transientType)
         let ourChangeCount = pasteboard.changeCount
 
         do {
@@ -189,7 +196,36 @@ public enum TextInjector {
 
     // MARK: - Pasteboard preservation
 
+    /// Marker password managers set on clipboard entries holding a secret.
+    ///
+    /// A de-facto standard rather than an Apple one, but it is what 1Password,
+    /// Bitwarden, KeePassXC and the rest actually write.
+    private static let concealedType = NSPasteboard.PasteboardType("org.nspasteboard.ConcealedType")
+
+    /// Marker asking clipboard-history apps not to archive an entry.
+    private static let transientType = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
+
+    /// Whether the clipboard currently holds something a password manager
+    /// flagged as secret.
+    private static func holdsConcealedContent(_ pasteboard: NSPasteboard) -> Bool {
+        pasteboard.types?.contains(concealedType) == true
+            || (pasteboard.pasteboardItems ?? []).contains { $0.types.contains(concealedType) }
+    }
+
+    /// Snapshot the pasteboard so it can be put back after a paste.
+    ///
+    /// Concealed entries are deliberately **not** read. Copying a password out
+    /// of the clipboard into this process would put a credential in Beagle's
+    /// memory for no benefit, and restoring it afterwards would extend its life
+    /// past the point the password manager meant to clear it. When one is
+    /// present the snapshot comes back empty, and ``restore(_:to:)`` clears the
+    /// clipboard rather than resurrecting the secret.
     private static func capture(_ pasteboard: NSPasteboard) -> PasteboardSnapshot {
+        guard !holdsConcealedContent(pasteboard) else {
+            Log.app.info("Clipboard holds concealed content; not snapshotting it")
+            return PasteboardSnapshot(items: [], changeCount: pasteboard.changeCount, wasConcealed: true)
+        }
+
         let items = (pasteboard.pasteboardItems ?? []).map { item in
             var contents: [NSPasteboard.PasteboardType: Data] = [:]
             for type in item.types {
@@ -197,12 +233,16 @@ public enum TextInjector {
             }
             return contents
         }
-        return PasteboardSnapshot(items: items, changeCount: pasteboard.changeCount)
+        return PasteboardSnapshot(items: items, changeCount: pasteboard.changeCount, wasConcealed: false)
     }
 
     private static func restore(_ snapshot: PasteboardSnapshot, to pasteboard: NSPasteboard) {
         pasteboard.clearContents()
-        guard !snapshot.items.isEmpty else { return }
+
+        // A concealed entry was never captured, so there is nothing to put
+        // back. Leaving the clipboard cleared is the safe end state: neither
+        // the user's secret nor Beagle's transcript is left sitting there.
+        guard !snapshot.wasConcealed, !snapshot.items.isEmpty else { return }
 
         let restored = snapshot.items.map { contents -> NSPasteboardItem in
             let item = NSPasteboardItem()
