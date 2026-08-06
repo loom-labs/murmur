@@ -166,8 +166,15 @@ jobs:
 
           # `gh release create` creates the tag itself at --target, so nothing
           # needs pushing to the protected main branch.
+          # A second copy under a version-less name. GitHub serves
+          # /releases/latest/download/<asset> only when the asset name is
+          # constant, so this is what lets the website link straight at the DMG
+          # instead of bouncing users through the releases page.
+          cp "dist/Beagle-${VERSION}-arm64.dmg" "dist/Beagle-arm64.dmg"
+
           gh release create "v${VERSION}" \
             "dist/Beagle-${VERSION}-arm64.dmg" \
+            "dist/Beagle-arm64.dmg" \
             --title "Beagle ${VERSION}" \
             "${notes_args[@]}" \
             --target "${GITHUB_SHA}"
