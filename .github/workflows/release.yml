@@ -8,6 +8,19 @@ on:
   push:
     branches: [main]
 
+  # A dropped push event should not cost a release. GitHub Actions outages
+  # discard queued triggers, and a merge that lands during one leaves main
+  # ahead of the last tag with nothing to re-fire it — main is protected, so
+  # there is no empty commit to push either. This is the way back.
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: "Version bump when run by hand"
+        required: true
+        default: patch
+        type: choice
+        options: [patch, minor, major]
+
 # Never cut two releases at once: both would compute the same next version from
 # the same latest tag, and the second would fail on a duplicate tag.
 concurrency:
@@ -34,8 +47,16 @@ jobs:
 
       - name: Resolve next version
         id: version
+        env:
+          MANUAL_BUMP: ${{ inputs.bump }}
         run: |
-          message="$(git log -1 --pretty=%s)"
+          if [ -n "${MANUAL_BUMP}" ]; then
+            # Synthesise the same subject a merge would have produced, so the
+            # manual path and the automatic one share one code path.
+            message="manual release #${MANUAL_BUMP}"
+          else
+            message="$(git log -1 --pretty=%s)"
+          fi
           echo "Merge commit: ${message}"
 
           if next="$(Scripts/next-version.sh "${message}")"; then
